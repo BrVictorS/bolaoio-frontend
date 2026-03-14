@@ -1,5 +1,5 @@
-import { Navbar } from '../../components/Navbar/Navbar.jsx';
-import { Footer } from '../../components/Footer/Footer.jsx';
+import { Navbar } from '../../components/navbar/Navbar.jsx';
+import { Footer } from '../../components/footer/Footer.jsx';
 import { Link } from 'react-router-dom';
 
 export function Home() {
