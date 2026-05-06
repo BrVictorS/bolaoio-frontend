@@ -249,7 +249,7 @@ export default function Palpite() {
     };
 
     return (
-        <div className="flex-1 p-6 bg-dark min-h-screen flex flex-col items-center justify-center">
+        <div className="flex-1 p-2 bg-dark min-h-screen flex flex-col items-center justify-center">
             {/* Toast de Notificação */}
             {toast.show && (
                 <ToastNotification
@@ -258,22 +258,22 @@ export default function Palpite() {
                 />
             )}
 
-            <div className="w-full max-w-3xl">
+            <div className="w-full max-w-3xl max-h-screen overflow-y-auto">
                 {/* Card Principal */}
-                <div className="bg-card border border-gray-700 rounded-3xl p-8 shadow-2xl">
+                <div className="bg-card border border-gray-700 rounded-3xl p-5 shadow-2xl m-2">
 
                     {/* Cabeçalho */}
-                    <div className="text-center mb-8">
-                        <span className="text-primary font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 mb-3">
+                    <div className="text-center mb-4">
+                        <span className="text-primary font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 mb-1">
                             <i className="fa-solid fa-bullseye"></i>
                             Seu Palpite
                         </span>
-                        <h1 className="text-3xl font-bold text-white mb-2">
+                        <h1 className="text-2xl font-bold text-white mb-2">
                             {dadosBolao.nome}
                         </h1>
 
                         {/* Badges de Informação */}
-                        <div className="flex flex-wrap justify-center gap-3 mt-4">
+                        <div className="flex flex-wrap justify-center gap-2 mt-2">
                             <div className="bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full text-green-400 text-xs font-bold">
                                 {isTipoPlacarExato ? '⚽ Placar Exato' : isTipoVencedor ? '🏆 Vencedor (1x2)' : 'Bolão'}
                             </div>
@@ -297,28 +297,28 @@ export default function Palpite() {
                     </div>
 
                     {/* Info da Partida */}
-                    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-2xl p-6 mb-8">
+                    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-2xl p-4 mb-4">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-gray-400 text-xs uppercase font-bold">Partida</span>
                             <span className="text-gray-500 text-xs">{formatarData(dadosBolao.data)}</span>
                         </div>
 
-                        <div className="flex items-center justify-around gap-4">
+                        <div className="flex items-center justify-around gap-2">
                             {/* Time A */}
                             <div className="flex flex-col items-center flex-1">
                                 {dadosBolao.flagA && (
                                     <img
                                         src={dadosBolao.flagA}
                                         alt={dadosBolao.timeA}
-                                        className="w-16 h-12 object-contain mb-2 rounded border border-gray-700"
+                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700"
                                     />
                                 )}
-                                <span className="font-bold text-white text-center text-lg">
+                                <span className="font-bold text-white text-center text-sm">
                                     {dadosBolao.timeA}
                                 </span>
                             </div>
 
-                            <div className="text-3xl font-black text-gray-600">VS</div>
+                            <div className="text-2xl font-black text-gray-600">VS</div>
 
                             {/* Time B */}
                             <div className="flex flex-col items-center flex-1">
@@ -326,10 +326,10 @@ export default function Palpite() {
                                     <img
                                         src={dadosBolao.flagB}
                                         alt={dadosBolao.timeB}
-                                        className="w-16 h-12 object-contain mb-2 rounded border border-gray-700"
+                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700"
                                     />
                                 )}
-                                <span className="font-bold text-white text-center text-lg">
+                                <span className="font-bold text-white text-center text-sm">
                                     {dadosBolao.timeB}
                                 </span>
                             </div>
@@ -344,7 +344,7 @@ export default function Palpite() {
 
                     {/* Aviso de Prazo Fechado */}
                     {isPrazoFechado && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-6 flex items-center gap-3">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-3 mb-4 flex items-center gap-2">
                             <i className="fa-solid fa-exclamation-circle text-red-400 text-xl"></i>
                             <div>
                                 <p className="text-red-400 font-bold text-sm">Prazo Encerrado</p>
@@ -358,15 +358,15 @@ export default function Palpite() {
                         <>
                             {/* Tipo: Placar Exato */}
                             {isTipoPlacarExato && (
-                                <div className="mb-8">
-                                    <h3 className="text-white font-bold mb-6 flex items-center gap-2">
+                                <div className="mb-4">
+                                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                                         <i className="fa-solid fa-futbol text-primary"></i>
                                         Digite o Placar Exato
                                     </h3>
 
-                                    <div className="flex items-end justify-center gap-6">
+                                    <div className="flex items-end justify-center gap-3">
                                         {/* Gols Time A */}
-                                        <div className="flex flex-col items-center gap-3">
+                                        <div className="flex flex-col items-center gap-2">
                                             <label className="text-gray-400 text-xs uppercase font-bold">
                                                 Gols - {dadosBolao.timeA}
                                             </label>
@@ -377,7 +377,7 @@ export default function Palpite() {
                                                 value={palpiteData.golsTimeA}
                                                 onChange={(e) => handleInputGols('A', e.target.value)}
                                                 disabled={isPrazoFechado}
-                                                className={`w-24 h-24 bg-gray-800 border-2 rounded-2xl text-center text-4xl font-bold text-white focus:border-primary outline-none transition ${
+                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${
                                                     erros.golsTimeA
                                                         ? 'border-red-500 focus:border-red-500'
                                                         : 'border-gray-700'
@@ -388,10 +388,10 @@ export default function Palpite() {
                                             )}
                                         </div>
 
-                                        <div className="text-4xl font-black text-gray-600 mb-6">X</div>
+                                        <div className="text-3xl font-black text-gray-600 mb-3">X</div>
 
                                         {/* Gols Time B */}
-                                        <div className="flex flex-col items-center gap-3">
+                                        <div className="flex flex-col items-center gap-2">
                                             <label className="text-gray-400 text-xs uppercase font-bold">
                                                 Gols - {dadosBolao.timeB}
                                             </label>
@@ -402,7 +402,7 @@ export default function Palpite() {
                                                 value={palpiteData.golsTimeB}
                                                 onChange={(e) => handleInputGols('B', e.target.value)}
                                                 disabled={isPrazoFechado}
-                                                className={`w-24 h-24 bg-gray-800 border-2 rounded-2xl text-center text-4xl font-bold text-white focus:border-primary outline-none transition ${
+                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${
                                                     erros.golsTimeB
                                                         ? 'border-red-500 focus:border-red-500'
                                                         : 'border-gray-700'
@@ -415,9 +415,9 @@ export default function Palpite() {
                                     </div>
 
                                     {/* Resumo Visual */}
-                                    <div className="mt-6 bg-black/30 rounded-xl p-4 border border-gray-700/50">
-                                        <p className="text-center text-gray-400 text-sm">Seu palpite</p>
-                                        <p className="text-center text-white text-3xl font-bold font-mono">
+                                    <div className="mt-3 bg-black/30 rounded-xl p-2 border border-gray-700/50">
+                                        <p className="text-center text-gray-400 text-xs">Seu palpite</p>
+                                        <p className="text-center text-white text-2xl font-bold font-mono">
                                             {palpiteData.golsTimeA} × {palpiteData.golsTimeB}
                                         </p>
                                     </div>
@@ -426,17 +426,17 @@ export default function Palpite() {
 
                             {/* Tipo: Vencedor 1x2 */}
                             {isTipoVencedor && (
-                                <div className="mb-8">
-                                    <h3 className="text-white font-bold mb-6 flex items-center gap-2">
+                                <div className="mb-4">
+                                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                                         <i className="fa-solid fa-trophy text-primary"></i>
                                         Escolha o Vencedor
                                     </h3>
 
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-3 gap-3">
                                         {/* Vitória Time A */}
                                         <button
                                             onClick={() => handleSelectVencedor('A')}
-                                            className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
                                                 palpiteData.vencedor === 'A'
                                                     ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
                                                     : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
@@ -450,7 +450,7 @@ export default function Palpite() {
                                         {/* Empate */}
                                         <button
                                             onClick={() => handleSelectVencedor('E')}
-                                            className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
                                                 palpiteData.vencedor === 'E'
                                                     ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
                                                     : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
@@ -464,7 +464,7 @@ export default function Palpite() {
                                         {/* Vitória Time B */}
                                         <button
                                             onClick={() => handleSelectVencedor('B')}
-                                            className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
                                                 palpiteData.vencedor === 'B'
                                                     ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
                                                     : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
@@ -482,9 +482,9 @@ export default function Palpite() {
 
                                     {/* Resumo Visual */}
                                     {palpiteData.vencedor && (
-                                        <div className="mt-6 bg-black/30 rounded-xl p-4 border border-gray-700/50">
-                                            <p className="text-center text-gray-400 text-sm">Seu palpite</p>
-                                            <p className="text-center text-white text-2xl font-bold">
+                                        <div className="mt-3 bg-black/30 rounded-xl p-2 border border-gray-700/50">
+                                            <p className="text-center text-gray-400 text-xs">Seu palpite</p>
+                                            <p className="text-center text-white text-sm font-bold">
                                                 {palpiteData.vencedor === 'A' && `Vitória de ${dadosBolao.timeA}`}
                                                 {palpiteData.vencedor === 'E' && 'Empate'}
                                                 {palpiteData.vencedor === 'B' && `Vitória de ${dadosBolao.timeB}`}
@@ -495,11 +495,11 @@ export default function Palpite() {
                             )}
 
                             {/* Botões de Ação */}
-                            <div className="flex flex-col gap-3 border-t border-gray-700 pt-6">
+                            <div className="flex flex-col gap-2 border-t border-gray-700 pt-4">
                                 <button
                                     onClick={handleConfirmarPalpite}
                                     disabled={submitting}
-                                    className="w-full bg-primary hover:bg-green-600 disabled:bg-gray-600 text-black font-bold py-4 rounded-2xl transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 duration-300 transform hover:-translate-y-1"
+                                    className="w-full bg-primary hover:bg-green-600 disabled:bg-gray-600 text-black font-bold py-3 rounded-2xl transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 duration-300 transform hover:-translate-y-1"
                                 >
                                     {submitting ? (
                                         <>

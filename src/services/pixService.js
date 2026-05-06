@@ -110,7 +110,7 @@ export const pixService = {
         try {
             console.log(`Obtendo informações de PIX do palpite ${palpiteId}`);
 
-            const response = await api.get(`/palpite/${palpiteId}/pix-info`);
+            const response = await api.get(`/bolao/palpite/gerar-pix/?id=${palpiteId}`);
             console.log("Informações de PIX:", response.data);
 
             return {

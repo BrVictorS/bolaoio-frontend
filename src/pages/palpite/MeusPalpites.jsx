@@ -91,13 +91,13 @@ export function MeusPalpites() {
                     label: '📅 Agendada',
                     icon: 'fa-calendar'
                 };
-            case 'true':
+            case 'concluida':
                 return {
-                    bg: 'bg-blue-500/10',
-                    border: 'border-blue-500/20',
-                    text: 'text-blue-400',
-                    label: '📅 Pagamento pendente',
-                    icon: 'fa-calendar'
+                    bg: 'bg-green-500/10',
+                    border: 'border-green-500/20',
+                    text: 'text-green-400',
+                    label: 'Partida Finalizada',
+                    icon: 'fa-check-circle'
                 };
                 
             case 'em jogo':
@@ -128,6 +128,85 @@ export function MeusPalpites() {
         }
     };
 
+    const getStatusBadgeTransacao = (status) => {
+    switch (status?.toLowerCase()) {
+            case 'concluido':
+                return {
+                    bg: 'bg-green-500/10',
+                    border: 'border-green-500/20',
+                    text: 'text-green-400',
+                    label: 'Palpite registrado',
+                    icon: 'fa-check-circle'
+                };
+            case 'processando':
+                return {
+                    bg: 'bg-yellow-500/10',
+                    border: 'border-yellow-500/20',
+                    text: 'text-yellow-400 text-xs font-bold',
+                    label: 'Pagamento pendente',
+                    // icon: 'fa-calendar'
+                };
+                
+            case 'cancelado':
+                return {
+                    bg: 'bg-yellow-500/10',
+                    border: 'border-yellow-500/20',
+                    text: 'text-yellow-400',
+                    label: '🔴 Em Jogo',
+                    icon: 'fa-circle-dot',
+                    animate: true
+                };
+            default:
+                return {
+                    display: 'none'
+                };
+        }
+    };
+
+    const getStatusBadgePalpite = (status) => {
+        console.log("Status do palpite:", status);
+    switch (status?.toLowerCase()) {
+            case 'vencedor':
+                return {
+                    bg: 'bg-green-500/10',
+                    border: 'border-green-500/20',
+                    text: 'text-green-400',
+                    label: 'Palpite vencedor',
+                    icon: 'fa-check-circle'
+                };
+            case 'pendente':
+                return {
+                    //display: 'none'
+                    hidden: true
+                };
+                
+            case 'perdedor':
+                return {
+                    bg: 'bg-yellow-500/10',
+                    border: 'border-yellow-500/20',
+                    text: 'text-yellow-400',
+                    label: 'Palpite perdedor',
+                    //icon: 'fa-circle-dot',
+                    animate: true
+                };
+            case 'cancelado':
+                return {
+                    bg: 'bg-gray-500/10',
+                    border: 'border-gray-500/20',
+                    text: 'text-gray-400',
+                    label: 'Palpite cancelado',
+                    icon: 'fa-circle-dot',
+                    animate: true
+                };
+
+            default:
+                return {
+                    display: 'none'
+                };
+        }
+    };
+
+
     const formatarData = (data) => {
         if (!data) return '';
         return new Date(data).toLocaleString('pt-BR', {
@@ -145,38 +224,14 @@ export function MeusPalpites() {
     };
 
     const getPalpiteResume = (palpite) => {
-        const tipo = palpite.tipoBolao || 1;
-
-        if (tipo === 1) {
-            // Placar Exato
-            return `${palpite.golsTimeA || 0} × ${palpite.golsTimeB || 0}`;
-        } else if (tipo === 2) {
-            // Vencedor 1x2
-            if (palpite.vencedor === 'A') return `Vitória de ${palpite.timeA}`;
-            if (palpite.vencedor === 'E') return 'Empate';
-            if (palpite.vencedor === 'B') return `Vitória de ${palpite.timeB}`;
+        //const tipo = palpite.tipoBolao || 2;
+        
+        if(palpite.statusJogo === 'Concluída'){
+            return '';
         }
-        return '-';
+            
     };
 
-    const getDiferencaPlacar = (palpite) => {
-        // Se a partida foi finalizada, comparar placar
-        if (palpite.statusJogo === 'Finalizada' && palpite.placarAtual) {
-            const [golsRealA, golsRealB] = palpite.placarAtual.split('×').map(g => parseInt(g.trim()));
-
-            if (palpite.tipoBolao === 1) {
-                // Placar exato
-                const acertou = palpite.golsTimeA === golsRealA && palpite.golsTimeB === golsRealB;
-                return {
-                    acertou,
-                    status: acertou ? '✓ ACERTOU!' : '✗ Errou',
-                    color: acertou ? 'text-green-400' : 'text-red-400',
-                    bg: acertou ? 'bg-green-500/10' : 'bg-red-500/10'
-                };
-            }
-        }
-        return null;
-    };
 
     if (loading) {
         return (
@@ -272,8 +327,9 @@ export function MeusPalpites() {
                 {palpitesFiltrados.length > 0 ? (
                     palpitesFiltrados.map((palpite, index) => {
                         const statusBadge = getStatusBadge(palpite.statusJogo);
-                        const statusBadge2 = getStatusBadge(palpite.statusPagamento.toString());
-                        const diferencaPlacar = getDiferencaPlacar(palpite);
+                        const statusBadge2 = getStatusBadgeTransacao(palpite.statusPagamento);
+                        const statusBadge3 = getStatusBadgePalpite(palpite.statusPalpite);
+                        
 
                         return (
                             <div
@@ -294,15 +350,27 @@ export function MeusPalpites() {
                                             </div>
 
                                             {/*status de pago*/}
-                                            {palpite.statusPagamento === true && (
-                                                <div className="flex items-center gap-3 mb-2">
+                                            <div className="flex items-center gap-3 mb-2">
                                                     <div className={`px-3 py-1 rounded-full text-xs font-bold border ${statusBadge2.bg} ${statusBadge2.border} ${statusBadge2.text} flex items-center gap-1 ${statusBadge2.animate ? 'animate-pulse' : ''}`}>
                                                         <i className={`fa-solid ${statusBadge2.icon}`}></i>
                                                         {statusBadge2.label}
                                                     </div>
                                                 </div>
-                                            )}
                                             </div>
+
+                                            {/*status palpite */}
+                                            {
+                                                palpite.statusJogo !== 'Pendente' && !statusBadge3.hidden && (
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                            <div className={`px-3 py-1 rounded-full text-xs font-bold border ${statusBadge3.bg} ${statusBadge3.border} ${statusBadge3.text} flex items-center gap-1 ${statusBadge3.animate ? 'animate-pulse' : ''}`}>
+                                                                <i className={`fa-solid ${statusBadge3.icon}`}></i>
+                                                                {statusBadge3.label}
+                                                            </div>
+                                                    </div>
+                                                    )
+                                            }
+                                            
+
 
                                             <h3 className="text-lg font-bold text-white mb-1">
                                                 {palpite.nomeBolao || 'Bolão sem nome'}
@@ -326,38 +394,22 @@ export function MeusPalpites() {
 
                                     {/* Linha Central - Palpite e Placar */}
                                     <div className="bg-black/30 rounded-xl p-4 border border-gray-700/50 mb-4">
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                            {/* Seu Palpite */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Primeiro Palpite */}
                                             <div>
                                                 <p className="text-gray-400 text-xs uppercase font-bold mb-2">Seu Palpite</p>
                                                 <p className="text-primary font-bold text-2xl font-mono">
-                                                    {getPalpiteResume(palpite)}
+                                                    {palpite.placarPalpite}
                                                 </p>
                                             </div>
 
-                                            {/* Resultado (se finalizado) */}
-                                            {palpite.statusJogo === 'Finalizada' && palpite.placarAtual && (
-                                                <>
-                                                    <div className="md:border-l md:border-gray-700/50 md:pl-4">
-                                                        <p className="text-gray-400 text-xs uppercase font-bold mb-2">Placar Real</p>
-                                                        <p className="text-white font-bold text-2xl font-mono">
-                                                            {palpite.placarAtual}
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Resultado */}
-                                                    {diferencaPlacar && (
-                                                        <div className={`md:border-l md:border-gray-700/50 md:pl-4 flex items-end ${diferencaPlacar.bg} rounded-lg p-3`}>
-                                                            <div>
-                                                                <p className="text-gray-400 text-xs uppercase font-bold mb-1">Resultado</p>
-                                                                <p className={`${diferencaPlacar.color} font-bold text-lg`}>
-                                                                    {diferencaPlacar.status}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
+                                            {/* Segundo Palpite (com a linha vertical à esquerda) */}
+                                            <div className="border-l border-gray-700/50 pl-4">
+                                                <p className="text-gray-400 text-xs uppercase font-bold mb-2">Placar do jogo</p>
+                                                <p className="text-primary font-bold text-2xl font-mono">
+                                                    {palpite.placarAtual}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -459,6 +511,10 @@ export function MeusPalpites() {
                     palpiteId={qrCodeData.palpiteId || qrCodeData.palpite_id}
                 />
             )}
+
+            
         </div>
+
+        
     );
 }
