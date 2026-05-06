@@ -124,7 +124,7 @@ export function Register() {
         <div className="flex items-start gap-3 mt-2">
           <input type="checkbox" id="terms" className="mt-1 accent-primary w-4 h-4 cursor-pointer" required />
           <label htmlFor="terms" className="text-xs text-gray-400 cursor-pointer">
-            Eu concordo com os <a href="#" className="text-primary hover:underline">Termos de Uso</a> e <a href="#" className="text-primary hover:underline">Política de Privacidade</a> do Bolao.io.
+            Eu concordo com os <a href="#" className="text-primary hover:underline">Termos de Uso</a> e <a href="#" className="text-primary hover:underline">Política de Privacidade</a> do Bollao.com.
           </label>
         </div>
 

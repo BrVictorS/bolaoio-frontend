@@ -1,0 +1,34 @@
+{
+  "id": 9999999999,
+  "live_mode": false,
+  "type": "payment",
+  "date_created": "2024-12-15T20:45:00.000Z",
+  "user_id": 123456,
+  "api_version": "v1",
+  "action": "payment.updated",
+  "data": {
+    "id": "EDITE_AQUI_COLOQUE_ID_TRANSACAO"
+  },
+  "resource": "/v1/payments/123456789",
+  "payment": {
+    "id": 123456789,
+    "date_created": "2024-12-15T20:30:00.000Z",
+    "date_approved": "2024-12-15T20:45:00.000Z",
+    "date_last_updated": "2024-12-15T20:45:00.000Z",
+    "currency_id": "BRL",
+    "settlement_amount": 50.00,
+    "total_paid_amount": 50.00,
+    "transaction_amount": 50.00,
+    "status": "approved",
+    "status_detail": "accredited",
+    "payer": {
+      "id": 987654,
+      "email": "usuario@example.com",
+      "first_name": "João",
+      "last_name": "Silva"
+    },
+    "external_reference": "EDITE_AQUI_COLOQUE_PALPITE_ID",
+    "description": "Palpite Bolão - PIX",
+    "payment_method_id": "pix"
+  }
+}

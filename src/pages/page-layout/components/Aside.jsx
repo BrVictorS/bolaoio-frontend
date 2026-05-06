@@ -1,18 +1,25 @@
-import { Link, useNavigate } from "react-router-dom"
-import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react"; // Adicione useEffect aqui
+import { authService } from "../../../services/authService";
 
 export function Aside({ balance }) {
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
+    // CORREÇÃO 1: useState na raiz, iniciando como false
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const userName = localStorage.getItem('nome') || 'Usuário';
+
+    // CORREÇÃO 2: useEffect apenas atualiza o estado
+    useEffect(() => {
+        setIsAdmin(authService.isAdmin());
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('nome');
-        
         navigate('/');
-        
         window.location.reload(); 
     };
 
@@ -56,10 +63,22 @@ export function Aside({ balance }) {
                     <i className="fa-solid fa-users w-5"></i> Criar Bolão
                 </Link>
 
-                <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</div>
-                <button onclick="router('admin')" className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-900/20 text-red-400 hover:text-red-300 transition flex items-center gap-3">
-                    <i className="fa-solid fa-shield-halved w-5"></i> Gestão do Sistema
-                </button>
+                {/* CORREÇÃO 3: Bloco Admin Único e Correto */}
+                {isAdmin && (
+                    <>
+                        <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Admin
+                        </div>
+                        <button 
+                            onClick={() => navigate('/admin')} 
+                            className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-900/20 text-red-400 hover:text-red-300 transition flex items-center gap-3"
+                        >
+                            <i className="fa-solid fa-shield-halved w-5"></i> 
+                            Gestão do Sistema
+                        </button>
+                    </>
+                )}
+                
             </nav>
 
             {/* Seção de Usuário com Menu de Funções */}

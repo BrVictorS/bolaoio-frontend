@@ -28,22 +28,9 @@ export function Header({ balance }) {
                         <i className="fa-regular fa-bell text-gray-300"></i>
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
-                    <div className="text-right hidden md:block">
-                        <span className="block text-xs text-gray-400">Saldo Atual</span>
-                        <span className="block font-bold text-primary">R$ {balance.toFixed(2)}</span>
-                    </div>
-                    <button 
-                        onClick={() => setOpen(true)}
-                        className="bg-primary hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-medium transition shadow-lg shadow-green-900/50">
-                        Depósito
-                    </button>
+                  
                 </div>
             </header>
-
-            <ModalDeposit
-                isOpen={open}
-                onClose={() => setOpen(false)}
-            />
         </>
     );
 }

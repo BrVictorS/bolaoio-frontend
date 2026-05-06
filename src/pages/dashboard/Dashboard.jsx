@@ -52,12 +52,12 @@ export function Dashboard() {
                         <h2 className="text-2xl font-bold text-white">Jogos em Destaque</h2>
                         <p className="text-gray-400 text-sm">Aposte nos jogos de hoje e nas fases finais.</p>
                     </div>
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                         <button className="px-3 py-1 bg-primary text-white text-sm rounded-full">Todos</button>
                         <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-full">Brasil</button>
                         <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-full">Fase de Grupos</button>
                         <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-full">Mata-Mata</button>
-                    </div>
+                    </div> */}
                 </div>
                 
                 <FeaturedGames games={partidas} />

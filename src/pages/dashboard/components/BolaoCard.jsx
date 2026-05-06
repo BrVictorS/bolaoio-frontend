@@ -65,10 +65,10 @@ export function BolaoCard({ bolao }) {
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}
                     </p>
                 </div>
-                <div className="md:mt-1">
+                {/* <div className="md:mt-1">
                     <p className="text-xs text-gray-400">Prêmio</p>
                     <p className="font-bold text-green-400">Sob consulta</p>
-                </div>
+                </div> */}
             </div>
 
             {/* Seção 4: Status e Ação */}
@@ -78,7 +78,7 @@ export function BolaoCard({ bolao }) {
                         <i className="fa-regular fa-clock"></i> 
                         {diasParaFechamento > 0 
                             ? `${diasParaFechamento}d restantes` 
-                            : 'Encerra hoje'}
+                            : 'Fechado'}
                     </div>
                 </div>
                 <Link

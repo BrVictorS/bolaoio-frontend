@@ -9,7 +9,7 @@ import { Wallet } from '../pages/wallet/Wallet.jsx';
 import { PagesLayout } from '../pages/page-layout/PageLayout.jsx';
 import { Bolao } from '../pages/bolao/Bolao.jsx';
 import { MeusPalpites } from '../pages/palpite/MeusPalpites.jsx';
-import Palpite from '../pages/palpite/Palpite.jsx';
+import { Palpite } from '../pages/palpite/Palpite.jsx';
 
 export function AppRoutes() {
     return (
@@ -25,10 +25,10 @@ export function AppRoutes() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<PagesLayout />}>
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/carteira" element={<Wallet />} />
+                        {/* <Route path="/carteira" element={<Wallet />} /> */}
                         <Route path="/bolao" element={<Bolao />} />
                         <Route path="/palpite" element={<MeusPalpites />} />
-                        <Route path="/palpite/:idBolao/palpite" element={<Palpite />} />
+                        <Route path="/palpite/:idBolao/palpite" element={<Palpite/>} />
                     </Route>
                 </Route>
             </Routes>
