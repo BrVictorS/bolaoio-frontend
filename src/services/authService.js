@@ -1,68 +1,108 @@
 import api from "./api";
 import { jwtDecode } from "jwt-decode";
+import {
+    LoginRequestDto, mapLoginResponseDto,
+    RegisterRequestDto, mapRegisterResponseDto,
+    GoogleLoginRequestDto, mapGoogleLoginResponseDto,
+    ForgotPasswordRequestDto, mapForgotPasswordResponseDto,
+    ResetPasswordWithTokenRequestDto, mapResetPasswordWithTokenResponseDto,
+    CompleteProfileRequestDto, mapCompleteProfileResponseDto
+} from "../dtos/auth";
+
+const persistSession = ({ token, nome, fotoUrl }) => {
+    if (!token) throw new Error("Token não retornado pela API");
+    localStorage.setItem("token", token);
+    localStorage.setItem("nome", nome || "Usuário");
+    if (fotoUrl) localStorage.setItem("fotoUrl", fotoUrl);
+    else localStorage.removeItem("fotoUrl");
+};
 
 export const authService = {
     login: async (email, senha) => {
         try {
-            const response = await api.post('/auth/login', { email, senha });
-            const { token, nome } = response.data; // Certifique-se que o backend retorna 'nome' também
-
-            if (!token) {
-                throw new Error("Token não retornado pela API");
-            }
-
-            localStorage.setItem("token", token);
-            // Salva o nome se vier do back, senão tenta salvar 'Usuário'
-            localStorage.setItem("nome", nome || "Usuário"); 
-
-            return response.data;
+            const response = await api.post('/auth/login', LoginRequestDto(email, senha));
+            const dto = mapLoginResponseDto(response.data);
+            persistSession(dto);
+            return dto;
         } catch (error) {
             throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
         }
     },
 
-    register: async (nome, email, senha) => {
+    register: async (nome, email, senha, cpf) => {
         try {
-            const response = await api.post('/auth/register', { nome, email, senha });
-            return response.data;
+            const response = await api.post('/auth/register', RegisterRequestDto(nome, email, senha, cpf));
+            return mapRegisterResponseDto(response.data);
         } catch (error) {
             throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
         }
     },
 
-    // --- CORREÇÃO AQUI ---
+    googleLogin: async (idToken) => {
+        try {
+            const response = await api.post('/auth/google', GoogleLoginRequestDto(idToken));
+            const dto = mapGoogleLoginResponseDto(response.data);
+            persistSession(dto);
+            localStorage.setItem("requerComplementoCadastro", dto.requerComplementoCadastro ? "1" : "0");
+            return dto;
+        } catch (error) {
+            throw error.response?.data || { message: 'Erro ao autenticar com Google' };
+        }
+    },
+
+    forgotPassword: async (email) => {
+        try {
+            const response = await api.post('/auth/forgot-password', ForgotPasswordRequestDto(email));
+            return mapForgotPasswordResponseDto(response.data);
+        } catch (error) {
+            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
+        }
+    },
+
+    resetPasswordWithToken: async (token, novaSenha) => {
+        try {
+            const response = await api.post('/auth/reset-password-token', ResetPasswordWithTokenRequestDto(token, novaSenha));
+            return mapResetPasswordWithTokenResponseDto(response.data);
+        } catch (error) {
+            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
+        }
+    },
+
+    completeProfile: async (cpf) => {
+        try {
+            const response = await api.put('/usuario/me/complete-profile', CompleteProfileRequestDto(cpf));
+            const dto = mapCompleteProfileResponseDto(response.data);
+            localStorage.setItem("requerComplementoCadastro", "0");
+            return dto;
+        } catch (error) {
+            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
+        }
+    },
+
+    requerComplementoCadastro: () => localStorage.getItem("requerComplementoCadastro") === "1",
+
     isAdmin: () => {
         const token = localStorage.getItem('token');
-        
-        // 1. Sem token? Não é admin.
         if (!token) return false;
-
         try {
-            // 2. Tenta decodificar
             const decoded = jwtDecode(token);
-            
-            // 3. Verifica a role.
-            // O .NET costuma usar essa URL longa para roles, por segurança verificamos as duas formas.
             const role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || decoded.role;
-
-            // 4. Retorna TRUE ou FALSE (quem chama a função decide o que fazer com isso)
             return role === 'admin' || role === 'Admin';
-            
         } catch (error) {
-            // Se o token estiver corrompido ou inválido
             return false;
         }
     },
 
     isAuthenticated: () => {
         const token = localStorage.getItem("token");
-        // Dica extra: Aqui você poderia verificar se o token expirou usando jwtDecode também
         return !!token;
     },
 
     logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("nome");
-        window.location.href = "/"; // Força o redirecionamento
+        localStorage.removeItem("fotoUrl");
+        localStorage.removeItem("requerComplementoCadastro");
+        window.location.href = "/";
     }
 };

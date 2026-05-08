@@ -8,4 +8,13 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  build: {
+    sourcemap: true,
+  },
+  server: {
+    sourcemap: true,
+    hmr: {
+      overlay: false
+    }
+  }
 })

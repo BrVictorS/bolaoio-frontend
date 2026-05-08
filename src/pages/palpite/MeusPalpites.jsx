@@ -28,7 +28,10 @@ export function MeusPalpites() {
             console.log(`Recuperando PIX para palpite ${palpiteId}`);
             const result = await pixService.obterInfoPix(palpiteId);
 
-            if (result.success && result.data) {
+            if(result.success && result.data.startsWith("Este")){
+                showToast('success', result.data);
+            }
+            else if (result.success && result.data) {
                 setQRCodeData(result.data);
                 setShowQRCode(true);
                 showToast('success', 'PIX carregado com sucesso!');
@@ -73,10 +76,10 @@ export function MeusPalpites() {
     // Filtrar palpites
     const palpitesFiltrados = palpites.filter(p => {
         if (filtro === 'pendentes') {
-            return p.statusJogo !== 'Finalizada';
+            return p.statusJogo !== 'Concluida';
         }
         if (filtro === 'finalizados') {
-            return p.statusJogo === 'Finalizada';
+            return p.statusJogo === 'Concluida';
         }
         return true;
     });
@@ -182,12 +185,12 @@ export function MeusPalpites() {
                 
             case 'perdedor':
                 return {
-                    bg: 'bg-yellow-500/10',
-                    border: 'border-yellow-500/20',
-                    text: 'text-yellow-400',
+                    bg: 'bg-red-500/10',
+                    border: 'border-red-500/20',
+                    text: 'text-red-400',
                     label: 'Palpite perdedor',
-                    //icon: 'fa-circle-dot',
-                    animate: true
+                    icon: 'fa-times-circle',
+                    //animate: true
                 };
             case 'cancelado':
                 return {
@@ -289,13 +292,13 @@ export function MeusPalpites() {
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 text-center flex-1 md:flex-none">
                         <p className="text-yellow-400 text-xs font-bold">Pendentes</p>
                         <p className="text-yellow-300 text-lg font-bold">
-                            {palpites.filter(p => p.statusJogo !== 'Finalizada').length}
+                            {palpites.filter(p => p.statusJogo !== 'Concluida').length}
                         </p>
                     </div>
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-center flex-1 md:flex-none">
                         <p className="text-green-400 text-xs font-bold">Finalizados</p>
                         <p className="text-green-300 text-lg font-bold">
-                            {palpites.filter(p => p.statusJogo === 'Finalizada').length}
+                            {palpites.filter(p => p.statusJogo === 'Concluida').length}
                         </p>
                     </div>
                 </div>
@@ -356,8 +359,6 @@ export function MeusPalpites() {
                                                         {statusBadge2.label}
                                                     </div>
                                                 </div>
-                                            </div>
-
                                             {/*status palpite */}
                                             {
                                                 palpite.statusJogo !== 'Pendente' && !statusBadge3.hidden && (
@@ -369,9 +370,12 @@ export function MeusPalpites() {
                                                     </div>
                                                     )
                                             }
+                                            </div>
+
+                                            
                                             
 
-
+                                    
                                             <h3 className="text-lg font-bold text-white mb-1">
                                                 {palpite.nomeBolao || 'Bolão sem nome'}
                                             </h3>
@@ -415,16 +419,6 @@ export function MeusPalpites() {
 
                                     {/* Linha Inferior - Ações */}
                                     <div className="flex flex-wrap gap-2">
-                                        {palpite.statusJogo !== 'Finalizada' && (
-                                            <button
-                                                onClick={() => navigate(`/bolao/${palpite.bolaoId}/editar`)}
-                                                className="flex-1 md:flex-none px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
-                                                title="Editar palpite"
-                                            >
-                                                <i className="fa-solid fa-edit"></i>
-                                                Editar
-                                            </button>
-                                        )}
 
                                         {/* Botão PIX - Mostrar se ainda não foi pago */}
                                         {palpite.statusJogo !== 'Finalizada' && palpite.statusPagamento !== 'pago' && (
