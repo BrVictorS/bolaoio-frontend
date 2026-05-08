@@ -28,7 +28,7 @@ export function MeusPalpites() {
             console.log(`Recuperando PIX para palpite ${palpiteId}`);
             const result = await pixService.obterInfoPix(palpiteId);
 
-            if(result.success && result.data.startsWith("Este")){
+            if(result.success && typeof result.data === "string" && result.data.startsWith("Este")){
                 showToast('success', result.data);
             }
             else if (result.success && result.data) {
