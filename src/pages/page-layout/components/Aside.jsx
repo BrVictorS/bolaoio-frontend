@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react"; // Adicione useEffect aqui
+import { useState, useEffect } from "react";
 import { authService } from "../../../services/authService";
+import { Logo } from "../../../components/logo/Logo";
 
 export function Aside({ balance }) {
     const navigate = useNavigate();
@@ -31,9 +32,8 @@ export function Aside({ balance }) {
 
     return (
         <aside className="w-64 bg-card border-r border-gray-700 hidden md:flex flex-col">
-            <div className="p-6 flex items-center gap-3">
-                <i className="fa-solid fa-earth-americas text-primary text-2xl"></i>
-                <h1 className="text-2xl font-bold text-white tracking-tighter">Bolao<span className="text-accent">.io</span></h1>
+            <div className="p-6">
+                <Logo size="md" />
             </div>
 
             <nav className="flex-1 px-4 space-y-2 mt-4">

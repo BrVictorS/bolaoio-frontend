@@ -1,11 +1,13 @@
+import { Logo } from '../logo/Logo';
+
 export function Footer() {
   return (
     <footer className="bg-card border-t border-gray-800 pt-12 pb-6">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
         <div>
-          <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-trophy text-accent"></i> Bolão.io
-          </h3>
+          <div className="mb-4">
+            <Logo size="sm" />
+          </div>
           <p className="text-gray-400 text-sm leading-relaxed">
             A maior plataforma de palpites para a Copa de 2026. Desafie seus amigos e prove que você entende de futebol.
           </p>
@@ -28,7 +30,7 @@ export function Footer() {
         </div>
       </div>
       <div className="text-center text-gray-500 text-xs border-t border-gray-800 pt-6">
-        &copy; 2026 Bolão.io - Todos os direitos reservados.
+        &copy; 2026 Bollao.com - Todos os direitos reservados.
       </div>
     </footer>
   );
