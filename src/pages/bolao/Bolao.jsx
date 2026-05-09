@@ -21,8 +21,7 @@ export function Bolao() {
         valor: '',
         dtFechamento: '',
         tipoBolao: 1,
-        partidaId: '',
-        maxParticipantes: ''
+        partidaId: ''
     });
 
     useEffect(() => {
@@ -70,8 +69,7 @@ export function Bolao() {
             valor: Number(formData.valor),
             dtFechamento: formData.dtFechamento,
             tipoBolao: Number(formData.tipoBolao),
-            partidaId: formData.partidaId,
-            maxParticipantes: formData.maxParticipantes ? Number(formData.maxParticipantes) : null
+            partidaId: formData.partidaId
         };
 
         try {
@@ -229,17 +227,7 @@ export function Bolao() {
                                     />
                                 </div>
 
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Limite de Participantes</label>
-                                    <input
-                                        name="maxParticipantes"
-                                        type="number"
-                                        value={formData.maxParticipantes}
-                                        onChange={handleChange}
-                                        placeholder="Ex: 10 (Deixe vazio para ilimitado)"
-                                        className="w-full bg-dark border border-gray-600 rounded-lg p-3 focus:border-primary outline-none"
-                                    />
-                                </div>
+
                             </div>
 
                             <div className="pt-6 border-t border-gray-800 flex justify-between items-center">

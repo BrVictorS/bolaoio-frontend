@@ -1,10 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from 'react';
 import { authService } from "../../services/authService";
 import { googleAuth } from "../../services/googleAuth";
 
 export function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const googleBtnRef = useRef(null);
   const [googleError, setGoogleError] = useState("");
 
@@ -24,7 +26,7 @@ export function Login() {
     const handleCredential = async (response) => {
       try {
         const dto = await authService.googleLogin(response.credential);
-        navigate(dto.requerComplementoCadastro ? "/complete-profile" : "/dashboard", { replace: true });
+        navigate(dto.requerComplementoCadastro ? "/complete-profile" : redirectTo, { replace: true });
       } catch (err) {
         setGoogleError(err.detail || err.message || "Falha ao autenticar com Google");
       }
@@ -50,7 +52,7 @@ export function Login() {
     setEnviando(true);
     try {
       await authService.login(formData.email, formData.senha);
-      navigate(authService.requerComplementoCadastro() ? "/complete-profile" : "/dashboard");
+      navigate(authService.requerComplementoCadastro() ? "/complete-profile" : redirectTo);
     } catch (error) {
       setErro(error.detail || error.message || "E-mail ou senha inválidos");
     } finally {

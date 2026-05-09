@@ -1,10 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { authService } from '../../services/authService';
 import { googleAuth } from '../../services/googleAuth';
 
 export function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const googleBtnRef = useRef(null);
   const [googleError, setGoogleError] = useState("");
 
@@ -18,7 +20,7 @@ export function Register() {
     const handleCredential = async (response) => {
       try {
         const dto = await authService.googleLogin(response.credential);
-        navigate(dto.requerComplementoCadastro ? "/complete-profile" : "/dashboard", { replace: true });
+        navigate(dto.requerComplementoCadastro ? "/complete-profile" : redirectTo, { replace: true });
       } catch (err) {
         setGoogleError(err.detail || err.message || "Falha ao autenticar com Google");
       }
@@ -57,7 +59,7 @@ export function Register() {
     setEnviando(true);
     try {
       await authService.register(formData.nome, formData.email, formData.senha, formData.cpf);
-      navigate('/login');
+      navigate(`/login${redirectTo !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`);
     } catch (error) {
       setErro(error.detail || error.message || "Erro ao criar conta");
     } finally {
