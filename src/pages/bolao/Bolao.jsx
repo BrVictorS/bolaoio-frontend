@@ -3,7 +3,7 @@ import { FootballGames } from './components/FootballGames';
 import { bolaoService } from '../../services/bolaoService';
 import { partidaService } from '../../services/partidaService';
 import { usuarioService } from '../../services/usuarioService';
-import MercadoPagoTokenModal from './components/MercadoPagoTokenModal';
+import ChavePixModal from './components/ChavePixModal';
 
 export function Bolao() {
     const [matches, setMatches] = useState([]);
@@ -11,9 +11,8 @@ export function Bolao() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [fetchingMatches, setFetchingMatches] = useState(true);
-    const [verificandoToken, setVerificandoToken] = useState(true);
-    const [showTokenModal, setShowTokenModal] = useState(false);
-    const [mpRedirectUrl, setMpRedirectUrl] = useState('');
+    const [verificando, setVerificando] = useState(true);
+    const [showPixModal, setShowPixModal] = useState(false);
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -25,20 +24,17 @@ export function Bolao() {
     });
 
     useEffect(() => {
-        usuarioService.verificarMercadoPago()
+        usuarioService.obterChavePix()
             .then(data => {
-                if (data.redirect) {
-                    setMpRedirectUrl(data.redirect);
-                    setShowTokenModal(true);
-                }
+                if (!data.configurada) setShowPixModal(true);
             })
-            .catch(() => setShowTokenModal(true))
-            .finally(() => setVerificandoToken(false));
+            .catch(() => setShowPixModal(true))
+            .finally(() => setVerificando(false));
     }, []);
 
     useEffect(() => {
         partidaService.getAllPartidas()
-            .then(data => setMatches(data))
+            .then(setMatches)
             .catch(err => console.error("Erro ao buscar partidas:", err))
             .finally(() => setFetchingMatches(false));
     }, []);
@@ -77,18 +73,14 @@ export function Bolao() {
             alert("Bolão criado com sucesso!");
             setStep(1);
         } catch (error) {
-            console.error("Erro capturado:", error);
-            if (error.response?.status === 500) {
-                alert("Atenção: O bolão pode ter sido criado, mas o servidor encontrou um erro ao processar o nome com acentos. Verifique sua lista de bolões.");
-            } else {
-                alert("Erro ao criar o bolão. Tente remover acentos do nome.");
-            }
+            const msg = error.response?.data?.detail || error.response?.data?.message || 'Erro ao criar o bolão.';
+            alert(msg);
         } finally {
             setLoading(false);
         }
     };
 
-    if (verificandoToken) {
+    if (verificando) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center space-y-3">
@@ -101,9 +93,9 @@ export function Bolao() {
 
     return (
         <>
-            <MercadoPagoTokenModal
-                isOpen={showTokenModal}
-                redirectUrl={mpRedirectUrl}
+            <ChavePixModal
+                isOpen={showPixModal}
+                onSaved={() => setShowPixModal(false)}
             />
 
             <div id="view-create-pool" className="fade-in max-w-4xl mx-auto p-4 pb-20">
@@ -226,8 +218,6 @@ export function Bolao() {
                                         className="w-full bg-dark border border-gray-600 rounded-lg p-3 focus:border-primary outline-none"
                                     />
                                 </div>
-
-
                             </div>
 
                             <div className="pt-6 border-t border-gray-800 flex justify-between items-center">

@@ -1,12 +1,12 @@
 import api from "./api";
 
 export const usuarioService = {
-    verificarMercadoPago: async () => {
-        try {
-            const response = await api.get('/usuario/verificar-mercado-pago');
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
-        }
-    }
+    obterChavePix: async () => {
+        const response = await api.get('/usuario/chave-pix');
+        return response.data;
+    },
+    definirChavePix: async (chavePix) => {
+        const response = await api.put('/usuario/chave-pix', { chavePix });
+        return response.data;
+    },
 };

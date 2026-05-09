@@ -24,4 +24,12 @@ export const bolaoService = {
         const response = await api.get(`/bolao/${bolaoId}/publico`);
         return response.data;
     },
+    getParticipantes: async (bolaoId) => {
+        const response = await api.get(`/bolao/${bolaoId}/participantes`);
+        return response.data;
+    },
+    cancelarPalpite: async (palpiteId) => {
+        const response = await api.post(`/bolao/palpite/${palpiteId}/cancelar`);
+        return response.data;
+    },
 };
