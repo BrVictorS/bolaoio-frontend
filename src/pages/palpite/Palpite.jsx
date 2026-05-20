@@ -2,56 +2,48 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { bolaoService } from "../../services/bolaoService";
 import { palpiteService } from '../../services/palpiteService';
-import { pixService } from '../../services/pixService';
 import ConfirmacaoPalpiteModal from './components/ConfirmacaoPalpiteModal';
 import ToastNotification from './components/ToastNotification';
-import QRCodePixModal from './components/QRCodePixModal';
+import PixRecargaModal from './components/PixRecargaModal';
 
 export default function Palpite() {
     const { idBolao } = useParams();
     const navigate = useNavigate();
 
-    // Estados para dados
     const [dadosBolao, setDadosBolao] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [toast, setToast] = useState({ show: false, type: '', message: '' });
 
-    // Estados para palpites
     const [palpiteData, setPalpiteData] = useState({
         golsTimeA: 0,
         golsTimeB: 0,
-        vencedor: null, // 'A', 'E' (empate), 'B', 'ambos'
+        vencedor: null,
     });
-
-    // Estados auxiliares
+    const [qtdCotas, setQtdCotas] = useState(1);
     const [erros, setErros] = useState({});
     const [isPrazoFechado, setIsPrazoFechado] = useState(false);
+    const [taxas, setTaxas] = useState(null);
 
-    // Estados para QR Code PIX
-    const [showQRCode, setShowQRCode] = useState(false);
-    const [palpiteIdCriado, setPalpiteIdCriado] = useState(null);
-    const [qrCodeData, setQRCodeData] = useState(null);
-    const [carregandoPix, setCarregandoPix] = useState(false);
+    // Estado para modal de recarga por saldo insuficiente
+    const [showRecargaModal, setShowRecargaModal] = useState(false);
+    const [valorNecessario, setValorNecessario] = useState(0);
 
-    // Busca dados do bolão ao carregar
     useEffect(() => {
         const fetchBolao = async () => {
             try {
                 setLoading(true);
                 const data = await bolaoService.getBolaoById(idBolao);
                 const bolao = data.data || data;
-
                 setDadosBolao(bolao);
+                bolaoService.getTaxas()
+                    .then(data => setTaxas(data))
+                    .catch(() => {});
 
-                // Validar se prazo passou
                 if (bolao.dtFechamento) {
                     const dataFechamento = new Date(bolao.dtFechamento);
-                    const agora = new Date();
-                    if (agora > dataFechamento) {
-                        setIsPrazoFechado(true);
-                    }
+                    if (new Date() > dataFechamento) setIsPrazoFechado(true);
                 }
             } catch (err) {
                 console.error("Erro ao buscar dados do bolão:", err);
@@ -61,7 +53,6 @@ export default function Palpite() {
                 setLoading(false);
             }
         };
-
         fetchBolao();
     }, [idBolao, navigate]);
 
@@ -72,38 +63,26 @@ export default function Palpite() {
 
     const validarPalpite = () => {
         const novoErros = {};
-
         if (dadosBolao?.tipoBolao === 1) {
-            // Placar Exato
-            if (typeof palpiteData.golsTimeA !== 'number' || palpiteData.golsTimeA < 0) {
+            if (typeof palpiteData.golsTimeA !== 'number' || palpiteData.golsTimeA < 0)
                 novoErros.golsTimeA = 'Gols válidos';
-            }
-            if (typeof palpiteData.golsTimeB !== 'number' || palpiteData.golsTimeB < 0) {
+            if (typeof palpiteData.golsTimeB !== 'number' || palpiteData.golsTimeB < 0)
                 novoErros.golsTimeB = 'Gols válidos';
-            }
         } else if (dadosBolao?.tipoBolao === 2) {
-            // Vencedor 1x2
-            if (!palpiteData.vencedor) {
-                novoErros.vencedor = 'Selecione um resultado';
-            }
+            if (!palpiteData.vencedor) novoErros.vencedor = 'Selecione um resultado';
         }
-
-        if (isPrazoFechado) {
-            novoErros.prazo = 'O prazo para este bolão foi encerrado';
-        }
-
+        if (isPrazoFechado) novoErros.prazo = 'O prazo para este bolão foi encerrado';
         setErros(novoErros);
         return Object.keys(novoErros).length === 0;
     };
 
     const handleInputGols = (time, valor) => {
         const numValue = Math.max(0, parseInt(valor) || 0);
-        if (numValue <= 99) { // Limite máximo de 99 gols
+        if (numValue <= 99) {
             setPalpiteData(prev => ({
                 ...prev,
                 [time === 'A' ? 'golsTimeA' : 'golsTimeB']: numValue
             }));
-            // Limpar erro deste campo
             setErros(prev => ({ ...prev, [time === 'A' ? 'golsTimeA' : 'golsTimeB']: '' }));
         }
     };
@@ -129,42 +108,30 @@ export default function Palpite() {
             BolaoId: idBolao,
             golsTimeA: palpiteData.golsTimeA,
             golsTimeB: palpiteData.golsTimeB,
-            vencedor: palpiteData.vencedor
+            vencedor: palpiteData.vencedor,
+            QtdCotas: qtdCotas
         };
 
         try {
-            console.log("Enviando palpite:", payload);
             const result = await palpiteService.postPalpite(payload);
 
             if (result.success && result.data) {
-                showToast('success', result.message || 'Palpite registrado com sucesso!');
+                const { saldoSuficiente, valorTotal } = result.data;
 
-                // O resultado agora contém RegistrarPalpiteResponseDto com ID e dados de PIX
-                const { palpiteId, qrCode, pixCopy, prixCopiaECola, valor } = result.data;
-
-                if (palpiteId) {
-                    setPalpiteIdCriado(palpiteId);
-
-                    // Preparar dados para o modal QR Code
-                    const pixData = {
-                        qrCode: qrCode || result.data.qr_code,
-                        pixCopy: pixCopy || prixCopiaECola || result.data.pix_copy,
-                        valor: valor || dadosBolao?.valor,
-                        expiraEm: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString()
-                    };
-
-                    setQRCodeData(pixData);
-                    setShowQRCode(true);
-                } else {
-                    // Se não conseguir extrair ID, redirecionar
-                    showToast('error', 'Erro ao obter ID do palpite criado');
-                    setTimeout(() => navigate('/meus-palpites'), 2000);
+                // Saldo insuficiente: palpite NÃO foi salvo — abrir modal de recarga
+                if (saldoSuficiente === false) {
+                    setValorNecessario(valorTotal ?? 0);
+                    setShowRecargaModal(true);
+                    return;
                 }
+
+                // Saldo suficiente: palpite salvo com sucesso
+                showToast('success', 'Palpite registrado! Entrada debitada da carteira.');
+                setTimeout(() => navigate('/palpite'), 2000);
             } else {
                 showToast('error', result.message || 'Erro ao registrar palpite');
             }
         } catch (error) {
-            console.error("Erro ao salvar:", error);
             const errorMsg = error.response?.data?.message || error.message || 'Erro ao registrar palpite.';
             showToast('error', errorMsg);
         } finally {
@@ -172,36 +139,16 @@ export default function Palpite() {
         }
     };
 
-    const gerarPixPalpite = async (palpiteId) => {
-        setCarregandoPix(true);
-        try {
-            console.log(`Gerando PIX para palpite ${palpiteId}`);
-            const result = await pixService.gerarPixParaPalpite(palpiteId);
-
-            if (result.success && result.data) {
-                setQRCodeData(result.data);
-                setShowQRCode(true);
-                showToast('success', 'PIX gerado com sucesso!');
-            } else {
-                // Se não conseguir gerar PIX, apenas redireciona
-                console.log("Não foi possível gerar PIX, redirecionando...");
-                setTimeout(() => navigate('/palpite'), 2000);
-            }
-        } catch (error) {
-            console.error("Erro ao gerar PIX:", error);
-            // Erro ao gerar PIX não deve bloquear o fluxo
-            console.log("Continuando mesmo sem PIX...");
-            setTimeout(() => navigate('/meus-palpites'), 3000);
-        } finally {
-            setCarregandoPix(false);
-        }
+    const formatarData = (data) => {
+        if (!data) return '';
+        return new Date(data).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
     };
 
-    const handleQRCodeFechado = () => {
-        setShowQRCode(false);
-        // Redirecionar para Meus Palpites após fechar o QR code
-        setTimeout(() => navigate('/meus-palpites'), 500);
-    };
+    const formatarValor = (valor) =>
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 
     if (loading) {
         return (
@@ -217,9 +164,7 @@ export default function Palpite() {
     if (!dadosBolao) {
         return (
             <div className="flex-1 p-6 bg-dark min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <p className="text-red-400">Bolão não encontrado</p>
-                </div>
+                <p className="text-red-400">Bolão não encontrado</p>
             </div>
         );
     }
@@ -233,33 +178,19 @@ export default function Palpite() {
     const horasRestantes = Math.floor(tempoRestante / (1000 * 60 * 60));
     const minutosRestantes = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
 
-    const formatarData = (data) => {
-        if (!data) return '';
-        return new Date(data).toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const formatarValor = (valor) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-    };
+    // Cálculo do valor total com taxas
+    const valorBase = dadosBolao?.valorEntrada ?? dadosBolao?.valor ?? 0;
+    const taxaAdm = taxas ? taxas.taxaAdm / 100 : 0;
+    const taxaMp = taxas ? taxas.taxaMp / 100 : 0;
+    const valorTaxas = valorBase * (taxaAdm + taxaMp);
+    const valorPorCota = dadosBolao?.valorEntrada;
+    const valorTotal = valorPorCota * qtdCotas;
 
     return (
         <div className="flex-1 p-2 bg-dark min-h-screen flex flex-col items-center justify-center">
-            {/* Toast de Notificação */}
-            {toast.show && (
-                <ToastNotification
-                    type={toast.type}
-                    message={toast.message}
-                />
-            )}
+            {toast.show && <ToastNotification type={toast.type} message={toast.message} />}
 
             <div className="w-full max-w-3xl max-h-screen overflow-y-auto">
-                {/* Card Principal */}
                 <div className="bg-card border border-gray-700 rounded-3xl p-5 shadow-2xl m-2">
 
                     {/* Cabeçalho */}
@@ -268,17 +199,13 @@ export default function Palpite() {
                             <i className="fa-solid fa-bullseye"></i>
                             Seu Palpite
                         </span>
-                        <h1 className="text-2xl font-bold text-white mb-2">
-                            {dadosBolao.nome}
-                        </h1>
-
-                        {/* Badges de Informação */}
+                        <h1 className="text-2xl font-bold text-white mb-2">{dadosBolao.nome}</h1>
                         <div className="flex flex-wrap justify-center gap-2 mt-2">
                             <div className="bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full text-green-400 text-xs font-bold">
                                 {isTipoPlacarExato ? '⚽ Placar Exato' : isTipoVencedor ? '🏆 Vencedor (1x2)' : 'Bolão'}
                             </div>
                             <div className="bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full text-blue-400 text-xs font-bold">
-                                Entrada: {formatarValor(dadosBolao.valor)}
+                                Entrada: {formatarValor(valorPorCota)}
                             </div>
                             {isPrazoFechado ? (
                                 <div className="bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full text-red-400 text-xs font-bold">
@@ -302,39 +229,23 @@ export default function Palpite() {
                             <span className="text-gray-400 text-xs uppercase font-bold">Partida</span>
                             <span className="text-gray-500 text-xs">{formatarData(dadosBolao.data)}</span>
                         </div>
-
                         <div className="flex items-center justify-around gap-2">
-                            {/* Time A */}
                             <div className="flex flex-col items-center flex-1">
                                 {dadosBolao.flagA && (
-                                    <img
-                                        src={dadosBolao.flagA}
-                                        alt={dadosBolao.timeA}
-                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700"
-                                    />
+                                    <img src={dadosBolao.flagA} alt={dadosBolao.timeA}
+                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700" />
                                 )}
-                                <span className="font-bold text-white text-center text-sm">
-                                    {dadosBolao.timeA}
-                                </span>
+                                <span className="font-bold text-white text-center text-sm">{dadosBolao.timeA}</span>
                             </div>
-
                             <div className="text-2xl font-black text-gray-600">VS</div>
-
-                            {/* Time B */}
                             <div className="flex flex-col items-center flex-1">
                                 {dadosBolao.flagB && (
-                                    <img
-                                        src={dadosBolao.flagB}
-                                        alt={dadosBolao.timeB}
-                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700"
-                                    />
+                                    <img src={dadosBolao.flagB} alt={dadosBolao.timeB}
+                                        className="w-12 h-8 object-contain mb-1 rounded border border-gray-700" />
                                 )}
-                                <span className="font-bold text-white text-center text-sm">
-                                    {dadosBolao.timeB}
-                                </span>
+                                <span className="font-bold text-white text-center text-sm">{dadosBolao.timeB}</span>
                             </div>
                         </div>
-
                         <div className="mt-4 pt-4 border-t border-gray-700/50 text-center">
                             <p className="text-gray-400 text-xs">
                                 <span className="font-bold text-white">Encerramento:</span> {formatarData(dadosBolao.dtFechamento)}
@@ -342,7 +253,7 @@ export default function Palpite() {
                         </div>
                     </div>
 
-                    {/* Aviso de Prazo Fechado */}
+                    {/* Prazo fechado */}
                     {isPrazoFechado && (
                         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-3 mb-4 flex items-center gap-2">
                             <i className="fa-solid fa-exclamation-circle text-red-400 text-xl"></i>
@@ -353,134 +264,74 @@ export default function Palpite() {
                         </div>
                     )}
 
-                    {/* Formulário de Palpite */}
+                    {/* Formulário */}
                     {!isPrazoFechado && (
                         <>
-                            {/* Tipo: Placar Exato */}
+                            {/* Placar Exato */}
                             {isTipoPlacarExato && (
                                 <div className="mb-4">
                                     <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                                         <i className="fa-solid fa-futbol text-primary"></i>
                                         Digite o Placar Exato
                                     </h3>
-
                                     <div className="flex items-end justify-center gap-3">
-                                        {/* Gols Time A */}
                                         <div className="flex flex-col items-center gap-2">
                                             <label className="text-gray-400 text-xs uppercase font-bold">
                                                 Gols - {dadosBolao.timeA}
                                             </label>
                                             <input
-                                                type="number"
-                                                min="0"
-                                                max="99"
+                                                type="number" min="0" max="99"
                                                 value={palpiteData.golsTimeA}
                                                 onChange={(e) => handleInputGols('A', e.target.value)}
-                                                disabled={isPrazoFechado}
-                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${
-                                                    erros.golsTimeA
-                                                        ? 'border-red-500 focus:border-red-500'
-                                                        : 'border-gray-700'
-                                                }`}
+                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${erros.golsTimeA ? 'border-red-500' : 'border-gray-700'}`}
                                             />
-                                            {erros.golsTimeA && (
-                                                <span className="text-red-400 text-xs">{erros.golsTimeA}</span>
-                                            )}
+                                            {erros.golsTimeA && <span className="text-red-400 text-xs">{erros.golsTimeA}</span>}
                                         </div>
-
                                         <div className="text-3xl font-black text-gray-600 mb-3">X</div>
-
-                                        {/* Gols Time B */}
                                         <div className="flex flex-col items-center gap-2">
                                             <label className="text-gray-400 text-xs uppercase font-bold">
                                                 Gols - {dadosBolao.timeB}
                                             </label>
                                             <input
-                                                type="number"
-                                                min="0"
-                                                max="99"
+                                                type="number" min="0" max="99"
                                                 value={palpiteData.golsTimeB}
                                                 onChange={(e) => handleInputGols('B', e.target.value)}
-                                                disabled={isPrazoFechado}
-                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${
-                                                    erros.golsTimeB
-                                                        ? 'border-red-500 focus:border-red-500'
-                                                        : 'border-gray-700'
-                                                }`}
+                                                className={`w-20 h-20 bg-gray-800 border-2 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none transition ${erros.golsTimeB ? 'border-red-500' : 'border-gray-700'}`}
                                             />
-                                            {erros.golsTimeB && (
-                                                <span className="text-red-400 text-xs">{erros.golsTimeB}</span>
-                                            )}
+                                            {erros.golsTimeB && <span className="text-red-400 text-xs">{erros.golsTimeB}</span>}
                                         </div>
-                                    </div>
-
-                                    {/* Resumo Visual */}
-                                    <div className="mt-3 bg-black/30 rounded-xl p-2 border border-gray-700/50">
-                                        <p className="text-center text-gray-400 text-xs">Seu palpite</p>
-                                        <p className="text-center text-white text-2xl font-bold font-mono">
-                                            {palpiteData.golsTimeA} × {palpiteData.golsTimeB}
-                                        </p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Tipo: Vencedor 1x2 */}
+                            {/* Vencedor 1x2 */}
                             {isTipoVencedor && (
                                 <div className="mb-4">
                                     <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                                         <i className="fa-solid fa-trophy text-primary"></i>
                                         Escolha o Vencedor
                                     </h3>
-
                                     <div className="grid grid-cols-3 gap-3">
-                                        {/* Vitória Time A */}
-                                        <button
-                                            onClick={() => handleSelectVencedor('A')}
-                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
-                                                palpiteData.vencedor === 'A'
-                                                    ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
-                                                    : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
-                                            }`}
-                                        >
-                                            <div className="text-2xl mb-2">{palpiteData.vencedor === 'A' && <i className="fa-solid fa-check text-primary"></i>}</div>
-                                            <p className="text-white font-bold text-sm">{dadosBolao.timeA}</p>
-                                            <p className="text-gray-400 text-xs">Vence</p>
-                                        </button>
-
-                                        {/* Empate */}
-                                        <button
-                                            onClick={() => handleSelectVencedor('E')}
-                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
-                                                palpiteData.vencedor === 'E'
-                                                    ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
-                                                    : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
-                                            }`}
-                                        >
-                                            <div className="text-2xl mb-2">{palpiteData.vencedor === 'E' && <i className="fa-solid fa-check text-primary"></i>}</div>
-                                            <p className="text-white font-bold text-sm">Empate</p>
-                                            <p className="text-gray-400 text-xs">Igualdade</p>
-                                        </button>
-
-                                        {/* Vitória Time B */}
-                                        <button
-                                            onClick={() => handleSelectVencedor('B')}
-                                            className={`p-3 rounded-2xl border-2 transition-all text-center ${
-                                                palpiteData.vencedor === 'B'
-                                                    ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
-                                                    : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
-                                            }`}
-                                        >
-                                            <div className="text-2xl mb-2">{palpiteData.vencedor === 'B' && <i className="fa-solid fa-check text-primary"></i>}</div>
-                                            <p className="text-white font-bold text-sm">{dadosBolao.timeB}</p>
-                                            <p className="text-gray-400 text-xs">Vence</p>
-                                        </button>
+                                        {[
+                                            { key: 'A', label: dadosBolao.timeA, sub: 'Vence' },
+                                            { key: 'E', label: 'Empate', sub: 'Igualdade' },
+                                            { key: 'B', label: dadosBolao.timeB, sub: 'Vence' },
+                                        ].map(({ key, label, sub }) => (
+                                            <button key={key} onClick={() => handleSelectVencedor(key)}
+                                                className={`p-3 rounded-2xl border-2 transition-all text-center ${
+                                                    palpiteData.vencedor === key
+                                                        ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
+                                                        : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
+                                                }`}>
+                                                <div className="text-2xl mb-2">
+                                                    {palpiteData.vencedor === key && <i className="fa-solid fa-check text-primary"></i>}
+                                                </div>
+                                                <p className="text-white font-bold text-sm">{label}</p>
+                                                <p className="text-gray-400 text-xs">{sub}</p>
+                                            </button>
+                                        ))}
                                     </div>
-
-                                    {erros.vencedor && (
-                                        <p className="text-red-400 text-xs text-center mt-3">{erros.vencedor}</p>
-                                    )}
-
-                                    {/* Resumo Visual */}
+                                    {erros.vencedor && <p className="text-red-400 text-xs text-center mt-3">{erros.vencedor}</p>}
                                     {palpiteData.vencedor && (
                                         <div className="mt-3 bg-black/30 rounded-xl p-2 border border-gray-700/50">
                                             <p className="text-center text-gray-400 text-xs">Seu palpite</p>
@@ -494,44 +345,64 @@ export default function Palpite() {
                                 </div>
                             )}
 
-                            {/* Botões de Ação */}
+                            {/* Quantidade de Cotas e Resumo de Valores */}
+                            <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p className="text-white font-bold text-sm">Quantidade de cotas</p>
+                                        <p className="text-gray-500 text-xs mt-0.5">Mais cotas = maior participação no prêmio</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setQtdCotas(q => Math.max(1, q - 1))}
+                                            className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg flex items-center justify-center transition">
+                                            −
+                                        </button>
+                                        <span className="text-white font-bold text-xl w-8 text-center">{qtdCotas}</span>
+                                        <button onClick={() => setQtdCotas(q => Math.min(10, q + 1))}
+                                            className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg flex items-center justify-center transition">
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {valorPorCota > 0 && (
+                                    <div className="bg-dark border border-gray-700 rounded-lg px-3 py-2 text-xs space-y-1 mb-3">
+                                        <div className="flex justify-between text-gray-500">
+                                            <span>Entrada ({qtdCotas} cota{qtdCotas > 1 ? 's' : ''} × {formatarValor(valorPorCota)})</span>
+                                            <span className="text-gray-300">{formatarValor(valorPorCota * qtdCotas)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-sm pt-2 border-t border-gray-700">
+                                    <span className="text-gray-400">Total a pagar</span>
+                                    <span className="text-white font-bold">{formatarValor(valorPorCota * qtdCotas)}</span>
+                                </div>
+
+                                
+                            </div>
+
+                            {/* Botões */}
                             <div className="flex flex-col gap-2 border-t border-gray-700 pt-4">
-                                <button
-                                    onClick={handleConfirmarPalpite}
-                                    disabled={submitting}
-                                    className="w-full bg-primary hover:bg-green-600 disabled:bg-gray-600 text-black font-bold py-3 rounded-2xl transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 duration-300 transform hover:-translate-y-1"
-                                >
+                                <button onClick={handleConfirmarPalpite} disabled={submitting}
+                                    className="w-full bg-primary hover:bg-green-600 disabled:bg-gray-600 text-black font-bold py-3 rounded-2xl transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 duration-300 transform hover:-translate-y-1">
                                     {submitting ? (
-                                        <>
-                                            <i className="fa-solid fa-spinner animate-spin"></i>
-                                            Enviando...
-                                        </>
+                                        <><i className="fa-solid fa-spinner animate-spin"></i> Enviando...</>
                                     ) : (
-                                        <>
-                                            <i className="fa-solid fa-check"></i>
-                                            Confirmar Palpite
-                                        </>
+                                        <><i className="fa-solid fa-check"></i> Confirmar Palpite</>
                                     )}
                                 </button>
-
-                                <button
-                                    onClick={() => navigate(-1)}
-                                    disabled={submitting}
-                                    className="w-full bg-transparent hover:bg-white/5 text-gray-400 font-medium py-3 rounded-xl transition disabled:opacity-50"
-                                >
+                                <button onClick={() => navigate(-1)} disabled={submitting}
+                                    className="w-full bg-transparent hover:bg-white/5 text-gray-400 font-medium py-3 rounded-xl transition disabled:opacity-50">
                                     Cancelar
                                 </button>
                             </div>
                         </>
                     )}
 
-                    {/* Se prazo fechado */}
                     {isPrazoFechado && (
                         <div className="flex flex-col gap-3 border-t border-gray-700 pt-6">
-                            <button
-                                onClick={() => navigate('/dashboard')}
-                                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-2xl transition"
-                            >
+                            <button onClick={() => navigate('/dashboard')}
+                                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-2xl transition">
                                 Voltar ao Dashboard
                             </button>
                         </div>
@@ -544,22 +415,24 @@ export default function Palpite() {
                 <ConfirmacaoPalpiteModal
                     bolao={dadosBolao}
                     palpite={palpiteData}
+                    qtdCotas={qtdCotas}
+                    taxas={taxas}
+                    
+                    valorTotal={valorTotal}
                     onConfirm={handleSalvarPalpite}
                     onCancel={() => setShowConfirmModal(false)}
                     isLoading={submitting}
                 />
             )}
 
-            {/* Modal de QR Code PIX */}
-            {showQRCode && qrCodeData && (
-                <QRCodePixModal
-                    isOpen={showQRCode}
-                    onClose={handleQRCodeFechado}
-                    qrCode={qrCodeData.qrCode || qrCodeData.qr_code}
-                    pixCopy={qrCodeData.pixCopy || qrCodeData.pix_copy}
-                    valor={qrCodeData.valor || dadosBolao?.valor}
-                    expiresAt={qrCodeData.expiraEm || qrCodeData.expira_em}
-                    palpiteId={palpiteIdCriado}
+            {/* Modal de Recarga por Saldo Insuficiente */}
+            {showRecargaModal && (
+                <PixRecargaModal
+                    isOpen={showRecargaModal}
+                    onClose={() => setShowRecargaModal(false)}
+                    taxaspercentuais={taxas ? (taxas.taxaAdm + taxas.taxaMp) : 0}
+                    valorEntrada={valorTotal}
+                    valorNecessario={valorNecessario}
                 />
             )}
         </div>

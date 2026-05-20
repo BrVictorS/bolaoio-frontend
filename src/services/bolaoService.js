@@ -24,4 +24,8 @@ export const bolaoService = {
         const response = await api.get(`/bolao/${bolaoId}/publico`);
         return response.data;
     },
+    getTaxas: async () => {
+        const response = await api.get('/bolao/taxas');
+        return response.data;
+    },
 };

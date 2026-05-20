@@ -5,11 +5,109 @@ import { pixService } from "../../services/pixService";
 import QRCodePixModal from "./components/QRCodePixModal";
 import ToastNotification from "./components/ToastNotification";
 
+function ModalResgate({ palpiteId, valorPremio, onClose, onSuccess }) {
+    const [chavePix, setChavePix] = useState('');
+    const [confirmando, setConfirmando] = useState(false);
+    const [etapa, setEtapa] = useState('input');
+    const [carregando, setCarregando] = useState(false);
+
+    const handleConfirmar = async () => {
+        if (!chavePix.trim()) return;
+        setCarregando(true);
+        try {
+            const res = await palpiteService.resgatarPremio(palpiteId, chavePix.trim());
+            if (res.success) {
+                onSuccess(res.data);
+            } else {
+                alert(res.message);
+            }
+        } finally {
+            setCarregando(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                        <i className="fa-solid fa-trophy text-yellow-400"></i>
+                        Resgatar Prêmio
+                    </h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition">
+                        <i className="fa-solid fa-times"></i>
+                    </button>
+                </div>
+
+                {etapa === 'input' ? (
+                    <>
+                        <p className="text-gray-400 text-sm mb-4">
+                            Informe sua chave PIX para receber{' '}
+                            <span className="text-green-400 font-bold">
+                                {valorPremio ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorPremio) : 'o prêmio'}
+                            </span>.
+                        </p>
+                        <input
+                            type="text"
+                            value={chavePix}
+                            onChange={e => setChavePix(e.target.value)}
+                            placeholder="CPF, e-mail, telefone ou chave aleatória"
+                            className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary mb-4"
+                        />
+                        <button
+                            onClick={() => setEtapa('confirmar')}
+                            disabled={!chavePix.trim()}
+                            className="w-full py-3 bg-primary hover:bg-green-600 disabled:opacity-50 text-black font-bold rounded-lg transition"
+                        >
+                            Continuar
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                            <div className="flex gap-2 mb-2">
+                                <i className="fa-solid fa-triangle-exclamation text-yellow-400 mt-0.5"></i>
+                                <p className="text-yellow-300 font-bold text-sm">Atenção — leia antes de confirmar</p>
+                            </div>
+                            <p className="text-yellow-200 text-xs leading-relaxed">
+                                O sistema <strong>não se responsabiliza</strong> por pagamentos enviados a chaves PIX incorretas.
+                                Verifique cuidadosamente antes de confirmar. Após o envio, não é possível cancelar ou estornar.
+                            </p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg px-4 py-3 mb-4">
+                            <p className="text-gray-400 text-xs mb-1">Chave PIX informada</p>
+                            <p className="text-white font-mono font-bold text-sm break-all">{chavePix}</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setEtapa('input')}
+                                className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-sm"
+                            >
+                                Corrigir
+                            </button>
+                            <button
+                                onClick={handleConfirmar}
+                                disabled={carregando}
+                                className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg transition text-sm flex items-center justify-center gap-2"
+                            >
+                                {carregando ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-check"></i>}
+                                Confirmar
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export function MeusPalpites() {
     const navigate = useNavigate();
     const [palpites, setPalpites] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filtro, setFiltro] = useState('todos'); // todos, pendentes, finalizados
+    const [filtro, setFiltro] = useState('todos');
+
+    const [modalResgate, setModalResgate] = useState(null);
 
     // Estados para QR Code
     const [showQRCode, setShowQRCode] = useState(false);
@@ -420,6 +518,17 @@ export function MeusPalpites() {
                                     {/* Linha Inferior - Ações */}
                                     <div className="flex flex-wrap gap-2">
 
+                                        {/* Botão Resgatar Prêmio */}
+                                        {palpite.statusPalpite?.toLowerCase() === 'vencedor' && !palpite.premioEnviado && (
+                                            <button
+                                                onClick={() => setModalResgate({ id: palpite.id, valor: palpite.valorPremio })}
+                                                className="flex-1 md:flex-none px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <i className="fa-solid fa-trophy"></i>
+                                                Resgatar Prêmio
+                                            </button>
+                                        )}
+
                                         {/* Botão PIX - Mostrar se ainda não foi pago */}
                                         {palpite.statusJogo !== 'Finalizada' && palpite.statusPagamento !== 'pago' && (
                                             <button
@@ -506,9 +615,21 @@ export function MeusPalpites() {
                 />
             )}
 
-            
+            {/* Modal de Resgate de Prêmio */}
+            {modalResgate && (
+                <ModalResgate
+                    palpiteId={modalResgate.id}
+                    valorPremio={modalResgate.valor}
+                    onClose={() => setModalResgate(null)}
+                    onSuccess={(data) => {
+                        setModalResgate(null);
+                        showToast('success', `Prêmio enviado com sucesso para a chave PIX informada!`);
+                        setPalpites(prev => prev.map(p =>
+                            p.id === data.palpiteId ? { ...p, premioEnviado: true } : p
+                        ));
+                    }}
+                />
+            )}
         </div>
-
-        
     );
 }

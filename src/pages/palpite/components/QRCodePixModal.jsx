@@ -18,6 +18,7 @@ export default function QRCodePixModal({
     qrCode,
     pixCopy,
     valor,
+    saldoUsado,
     expiresAt,
     palpiteId
 }) {
@@ -93,10 +94,17 @@ export default function QRCodePixModal({
 
                 {/* Informações do Valor */}
                 <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-3 mb-4 text-center">
-                    <p className="text-gray-400 text-xs uppercase font-bold mb-1">Valor a Pagar</p>
+                    <p className="text-gray-400 text-xs uppercase font-bold mb-1">
+                        {saldoUsado > 0 ? 'Diferença a Pagar via PIX' : 'Valor a Pagar'}
+                    </p>
                     <p className="text-green-400 font-bold text-2xl">
                         R$ {valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
+                    {saldoUsado > 0 && (
+                        <p className="text-gray-400 text-xs mt-1">
+                            + R$ {saldoUsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} pagos pela sua carteira
+                        </p>
+                    )}
                 </div>
 
                 {/* QR Code */}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export function BolaoCard({ bolao }) {
     const {
-        id, nome, valor, dtFechamento, qtdParticipantes,
+        id, nome, valor, valorEntrada, dtFechamento, qtdParticipantes,
         organizador, partida = {}
     } = bolao || {};
 
@@ -46,7 +46,7 @@ export function BolaoCard({ bolao }) {
                 <div>
                     <p className="text-xs text-gray-400">Entrada</p>
                     <p className="font-bold text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorEntrada || valor)}
                     </p>
                 </div>
             </div>

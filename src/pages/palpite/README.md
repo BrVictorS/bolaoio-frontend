@@ -317,12 +317,12 @@ Todos os componentes são responsive:
 // Clica "Confirmar" no modal
 // Palpite é enviado via palpiteService.postPalpite()
 // Toast de sucesso aparece
-// Redireciona para /meus-palpites
+// Redireciona para /palpite
 ```
 
 ### Visualizar palpites
 ```javascript
-// Usuário acessa /meus-palpites
+// Usuário acessa /palpite
 // MeusPalpites.jsx carrega via palpiteService.getPalpiteByUser()
 // Lista é filtrada e exibida com status visual
 // Usuário pode editar (se pendente) ou compartilhar (WhatsApp)

@@ -53,4 +53,26 @@ export const adminService = {
         const response = await api.get('/bolao/times');
         return response.data;
     },
+    reenviarPremio: async (palpiteId) => {
+        const response = await api.post(`/admin/palpite/${palpiteId}/reenviar-premio`);
+        return response.data;
+    },
+    finalizarPartida: async (partidaId, golsTimeA, golsTimeB) => {
+        const response = await api.post(`/admin/partida/${partidaId}/finalizar`, { golsTimeA, golsTimeB });
+        return response.data;
+    },
+    getPagamentosBolao: async (bolaoId) => {
+        const response = await api.get(`/admin/bolao/${bolaoId}/pagamentos`);
+        return response.data;
+    },
+    getBoloesPartida: async (partidaId) => {
+        const response = await api.get(`/admin/partida/${partidaId}/bolaoes`);
+        return response.data;
+    },
+    getLogs: async (tipo = null, pagina = 1) => {
+        const params = new URLSearchParams({ pagina });
+        if (tipo !== null && tipo !== undefined) params.append('tipo', tipo);
+        const response = await api.get(`/admin/log?${params.toString()}`);
+        return response.data;
+    },
 };

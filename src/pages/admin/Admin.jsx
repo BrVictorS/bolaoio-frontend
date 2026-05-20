@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminService } from "../../services/adminService";
+import { usuarioService } from "../../services/usuarioService";
+
+const TIPOS_CHAVE_PIX = [
+    { value: 0, label: "CPF" },
+    { value: 1, label: "E-mail" },
+    { value: 2, label: "Telefone" },
+    { value: 3, label: "Chave aleatória" },
+];
 
 const STATUS_PARTIDA = [
     { value: 0, label: "Agendada" },
@@ -37,17 +45,302 @@ function Toast({ msg, tipo, onClose }) {
     );
 }
 
+function ModalResultadoPagamento({ resultado, onClose }) {
+    if (!resultado) return null;
+    const { boloesProcessados, totalVencedores, totalPagosComSucesso, totalReembolsados, totalErros,
+        totalArrecadado, taxaAdministrativa, totalPremios, saldoInsuficiente, mensagem, detalhesPagamentos } = resultado;
+    const [reenviando, setReenviando] = useState({});
+    const [statusLocal, setStatusLocal] = useState({});
+
+    const reenviar = async (palpiteId) => {
+        setReenviando(prev => ({ ...prev, [palpiteId]: true }));
+        try {
+            const res = await adminService.reenviarPremio(palpiteId);
+            setStatusLocal(prev => ({ ...prev, [palpiteId]: res }));
+        } catch (e) {
+            setStatusLocal(prev => ({ ...prev, [palpiteId]: { sucesso: false, erro: e?.response?.data?.detail || 'Erro ao reenviar' } }));
+        } finally {
+            setReenviando(prev => ({ ...prev, [palpiteId]: false }));
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-card border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-gray-700 flex justify-between items-start">
+                    <div>
+                        <h2 className="text-white font-bold text-lg">Resultado do Processamento</h2>
+                        <p className={`text-sm mt-1 ${saldoInsuficiente ? 'text-red-400' : 'text-gray-400'}`}>{mensagem}</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white transition text-xl"><i className="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-gray-700">
+                    <div className="bg-dark rounded-xl p-4 text-center">
+                        <p className="text-gray-400 text-xs mb-1">Arrecadado</p>
+                        <p className="text-white font-bold text-lg">R${totalArrecadado?.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-dark rounded-xl p-4 text-center">
+                        <p className="text-gray-400 text-xs mb-1">Taxa (plataforma)</p>
+                        <p className="text-accent font-bold text-lg">R${taxaAdministrativa?.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-dark rounded-xl p-4 text-center">
+                        <p className="text-gray-400 text-xs mb-1">Total prêmios</p>
+                        <p className="text-green-400 font-bold text-lg">R${totalPremios?.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-dark rounded-xl p-4 text-center">
+                        <p className="text-gray-400 text-xs mb-1">Bolões</p>
+                        <p className="text-white font-bold text-lg">{boloesProcessados}</p>
+                    </div>
+                </div>
+
+                <div className="p-6 grid grid-cols-3 gap-4 border-b border-gray-700">
+                    <div className="text-center">
+                        <div className="text-2xl font-black text-green-400">{totalPagosComSucesso}</div>
+                        <div className="text-gray-400 text-xs mt-1">Pagamentos OK</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-black text-blue-400">{totalReembolsados}</div>
+                        <div className="text-gray-400 text-xs mt-1">Reembolsados</div>
+                    </div>
+                    <div className="text-center">
+                        <div className={`text-2xl font-black ${totalErros > 0 ? 'text-red-400' : 'text-gray-500'}`}>{totalErros}</div>
+                        <div className="text-gray-400 text-xs mt-1">Erros</div>
+                    </div>
+                </div>
+
+                {saldoInsuficiente && (
+                    <div className="mx-6 mt-4 bg-red-900/30 border border-red-700 rounded-xl p-4 flex items-start gap-3">
+                        <i className="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
+                        <p className="text-red-300 text-sm">Saldo insuficiente na conta Mercado Pago. Nenhum vencedor foi pago. Recarregue o saldo e reprocesse.</p>
+                    </div>
+                )}
+
+                {detalhesPagamentos?.length > 0 && (
+                    <div className="p-6">
+                        <h3 className="text-white font-semibold mb-3 text-sm">Detalhes por participante</h3>
+                        <div className="space-y-2">
+                            {detalhesPagamentos.map((d, i) => {
+                                const local = statusLocal[d.palpiteId];
+                                const sucesso = local?.sucesso ?? d.sucesso;
+                                const erro = local?.erro ?? d.erro;
+                                const transacaoId = local?.transacaoId ?? d.transacaoId;
+                                const podeTentar = !sucesso && !reenviando[d.palpiteId];
+                                return (
+                                    <div key={i} className={`rounded-lg px-4 py-3 text-sm border
+                                        ${sucesso ? 'bg-green-900/20 border-green-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <i className={`fa-solid ${sucesso ? 'fa-check text-green-400' : 'fa-xmark text-red-400'}`}></i>
+                                                <div>
+                                                    <p className="text-white font-medium">{d.nomeParticipante}</p>
+                                                    {erro && <p className="text-red-400 text-xs mt-0.5">{erro}</p>}
+                                                    {transacaoId && <p className="text-gray-500 text-xs mt-0.5">ID: {transacaoId}</p>}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-bold ${sucesso ? 'text-green-400' : 'text-gray-500'}`}>
+                                                    R${d.valorEnviado?.toFixed(2)}
+                                                </span>
+                                                {podeTentar && (
+                                                    <button
+                                                        onClick={() => reenviar(d.palpiteId)}
+                                                        className="text-xs px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-400 hover:bg-blue-900/60 transition font-semibold">
+                                                        <i className="fa-solid fa-rotate mr-1"></i>Reenviar
+                                                    </button>
+                                                )}
+                                                {reenviando[d.palpiteId] && (
+                                                    <i className="fa-solid fa-spinner animate-spin text-blue-400 text-sm"></i>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function ModalFinalizarPartida({ partida, onConfirm, onClose }) {
+    const [golsA, setGolsA] = useState(0);
+    const [golsB, setGolsB] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    const confirmar = async () => {
+        setLoading(true);
+        try {
+            await onConfirm(golsA, golsB);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-card border border-gray-700 rounded-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                <h2 className="text-white font-bold text-lg mb-1">Finalizar Partida</h2>
+                <p className="text-gray-400 text-sm mb-5">Informe o placar final. O sistema processará os pagamentos automaticamente.</p>
+                <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-gray-400 text-xs font-semibold">{partida.timeA}</span>
+                        <input
+                            type="number" min="0" max="99" value={golsA}
+                            onChange={e => setGolsA(Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-20 h-20 bg-dark border-2 border-gray-600 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none" />
+                    </div>
+                    <span className="text-gray-500 text-2xl font-black mt-5">×</span>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-gray-400 text-xs font-semibold">{partida.timeB}</span>
+                        <input
+                            type="number" min="0" max="99" value={golsB}
+                            onChange={e => setGolsB(Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-20 h-20 bg-dark border-2 border-gray-600 rounded-2xl text-center text-3xl font-bold text-white focus:border-primary outline-none" />
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={confirmar}
+                        disabled={loading}
+                        className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-green-600 text-black text-sm font-bold transition disabled:opacity-60">
+                        {loading ? <i className="fa-solid fa-spinner animate-spin"></i> : 'Confirmar e Processar'}
+                    </button>
+                    <button onClick={onClose} className="px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm transition">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ModalPagamentosBolao({ bolaoId, nomeBolao, onClose }) {
+    const [dados, setDados] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [reenviando, setReenviando] = useState({});
+    const [statusLocal, setStatusLocal] = useState({});
+
+    useEffect(() => {
+        adminService.getPagamentosBolao(bolaoId)
+            .then(data => setDados(data?.[0] || null))
+            .finally(() => setLoading(false));
+    }, [bolaoId]);
+
+    const reenviar = async (palpiteId) => {
+        setReenviando(prev => ({ ...prev, [palpiteId]: true }));
+        try {
+            const res = await adminService.reenviarPremio(palpiteId);
+            setStatusLocal(prev => ({ ...prev, [palpiteId]: { sucesso: res.sucesso, erro: res.erro, transacaoId: res.transacaoId } }));
+        } catch (e) {
+            setStatusLocal(prev => ({ ...prev, [palpiteId]: { sucesso: false, erro: e?.response?.data?.detail || 'Erro ao reenviar' } }));
+        } finally {
+            setReenviando(prev => ({ ...prev, [palpiteId]: false }));
+        }
+    };
+
+    const statusPalpiteLabel = (s) => {
+        const map = { Pendente: 'Pendente', Vencedor: 'Vencedor', Perdedor: 'Perdedor', Cancelado: 'Cancelado' };
+        return map[s] || s;
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-card border border-gray-700 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center shrink-0">
+                    <div>
+                        <h2 className="text-white font-bold">{nomeBolao}</h2>
+                        <p className="text-gray-500 text-xs mt-0.5">Status de pagamentos dos palpites</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white transition text-xl">
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 p-5">
+                    {loading ? (
+                        <div className="text-center py-10 text-gray-400">
+                            <i className="fa-solid fa-spinner animate-spin text-2xl"></i>
+                        </div>
+                    ) : !dados || dados.palpites?.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">Nenhum palpite encontrado.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {dados.palpites.map(p => {
+                                const local = statusLocal[p.palpiteId];
+                                const premioEnviado = local?.sucesso ?? p.premioEnviado;
+                                const premioErro = local?.sucesso ? null : (local?.erro ?? p.premioErro);
+                                const transacaoId = local?.transacaoId ?? p.transacaoId;
+                                const eVencedor = p.statusPalpite === 'Vencedor';
+                                const podeTentar = eVencedor && !premioEnviado && p.pago;
+
+                                return (
+                                    <div key={p.palpiteId} className={`rounded-lg px-4 py-3 text-sm border
+                                        ${!eVencedor ? 'bg-gray-800/30 border-gray-700/40' :
+                                            premioEnviado ? 'bg-green-900/20 border-green-800/40' :
+                                            premioErro ? 'bg-red-900/20 border-red-800/40' :
+                                            'bg-yellow-900/20 border-yellow-800/40'}`}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <i className={`fa-solid shrink-0 ${
+                                                    premioEnviado ? 'fa-circle-check text-green-400' :
+                                                    eVencedor && premioErro ? 'fa-circle-xmark text-red-400' :
+                                                    eVencedor ? 'fa-trophy text-yellow-400' :
+                                                    'fa-circle text-gray-600'
+                                                }`}></i>
+                                                <div className="min-w-0">
+                                                    <p className="text-white font-medium truncate">{p.nomeParticipante}</p>
+                                                    <p className="text-gray-500 text-xs">{statusPalpiteLabel(p.statusPalpite)}</p>
+                                                    {premioErro && <p className="text-red-400 text-xs mt-0.5 truncate">{premioErro}</p>}
+                                                    {transacaoId && <p className="text-gray-600 text-xs mt-0.5 truncate">ID: {transacaoId}</p>}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {p.valorPremio != null && (
+                                                    <span className={`font-bold text-sm ${premioEnviado ? 'text-green-400' : 'text-gray-500'}`}>
+                                                        R${p.valorPremio?.toFixed(2)}
+                                                    </span>
+                                                )}
+                                                {podeTentar && !reenviando[p.palpiteId] && (
+                                                    <button
+                                                        onClick={() => reenviar(p.palpiteId)}
+                                                        className="text-xs px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-400 hover:bg-blue-900/60 transition font-semibold">
+                                                        <i className="fa-solid fa-rotate mr-1"></i>Reenviar
+                                                    </button>
+                                                )}
+                                                {reenviando[p.palpiteId] && (
+                                                    <i className="fa-solid fa-spinner animate-spin text-blue-400 text-sm"></i>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function AbaPartidas() {
     const [partidas, setPartidas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sincronizando, setSincronizando] = useState(false);
-    const [processando, setProcessando] = useState(null);
     const [toast, setToast] = useState(null);
     const [expandida, setExpandida] = useState(null);
     const [statusEdit, setStatusEdit] = useState({});
     const [showCriar, setShowCriar] = useState(false);
     const [times, setTimes] = useState([]);
     const [novaPartida, setNovaPartida] = useState({ idTimeA: "", idTimeB: "", dataPartida: "" });
+    const [resultadoPagamento, setResultadoPagamento] = useState(null);
+    const [modalFinalizar, setModalFinalizar] = useState(null);
+    const [modalPagamentos, setModalPagamentos] = useState(null);
+    const [boloesPartida, setBoloesPartida] = useState({});
+    const [carregandoBolaoes, setCarregandoBolaoes] = useState({});
 
     const showToast = (msg, tipo = "ok") => setToast({ msg, tipo });
 
@@ -65,6 +358,25 @@ function AbaPartidas() {
 
     useEffect(() => { carregar(); }, [carregar]);
 
+    const carregarBoloesPartida = async (partidaId) => {
+        if (boloesPartida[partidaId] || carregandoBolaoes[partidaId]) return;
+        setCarregandoBolaoes(prev => ({ ...prev, [partidaId]: true }));
+        try {
+            const data = await adminService.getBoloesPartida(partidaId);
+            setBoloesPartida(prev => ({ ...prev, [partidaId]: data || [] }));
+        } catch {
+            setBoloesPartida(prev => ({ ...prev, [partidaId]: [] }));
+        } finally {
+            setCarregandoBolaoes(prev => ({ ...prev, [partidaId]: false }));
+        }
+    };
+
+    const handleExpandir = (partidaId) => {
+        const novaExpandida = expandida === partidaId ? null : partidaId;
+        setExpandida(novaExpandida);
+        if (novaExpandida) carregarBoloesPartida(novaExpandida);
+    };
+
     const sincronizar = async () => {
         setSincronizando(true);
         try {
@@ -78,16 +390,27 @@ function AbaPartidas() {
         }
     };
 
+    const finalizar = async (partida, golsA, golsB) => {
+        try {
+            const res = await adminService.finalizarPartida(partida.id, golsA, golsB);
+            setModalFinalizar(null);
+            setResultadoPagamento(res);
+            setBoloesPartida(prev => { const n = { ...prev }; delete n[partida.id]; return n; });
+            await carregar();
+        } catch (e) {
+            showToast(e?.response?.data?.detail || "Erro ao finalizar partida", "erro");
+            setModalFinalizar(null);
+        }
+    };
+
     const processar = async (partidaId) => {
-        setProcessando(partidaId);
         try {
             const res = await adminService.processarResultado(partidaId);
-            showToast(res.mensagem || "Resultado processado!");
+            setResultadoPagamento(res);
+            setBoloesPartida(prev => { const n = { ...prev }; delete n[partidaId]; return n; });
             await carregar();
         } catch (e) {
             showToast(e?.response?.data?.title || "Erro ao processar resultado", "erro");
-        } finally {
-            setProcessando(null);
         }
     };
 
@@ -129,9 +452,25 @@ function AbaPartidas() {
         }
     };
 
+    const podeFinalizar = (p) => !['Concluida', 'Cancelada'].includes(p.statusPartida) && p.boloesAtivos > 0;
+
     return (
         <div>
             {toast && <Toast msg={toast.msg} tipo={toast.tipo} onClose={() => setToast(null)} />}
+            {resultadoPagamento && <ModalResultadoPagamento resultado={resultadoPagamento} onClose={() => setResultadoPagamento(null)} />}
+            {modalFinalizar && (
+                <ModalFinalizarPartida
+                    partida={modalFinalizar}
+                    onConfirm={(golsA, golsB) => finalizar(modalFinalizar, golsA, golsB)}
+                    onClose={() => setModalFinalizar(null)} />
+            )}
+            {modalPagamentos && (
+                <ModalPagamentosBolao
+                    bolaoId={modalPagamentos.bolaoId}
+                    nomeBolao={modalPagamentos.nomeBolao}
+                    onClose={() => setModalPagamentos(null)} />
+            )}
+
             <div className="flex flex-wrap gap-3 mb-6">
                 <button
                     onClick={sincronizar}
@@ -206,7 +545,7 @@ function AbaPartidas() {
                         <div key={p.id} className="bg-dark border border-gray-700 rounded-xl overflow-hidden">
                             <div
                                 className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-800/30 transition"
-                                onClick={() => setExpandida(expandida === p.id ? null : p.id)}>
+                                onClick={() => handleExpandir(p.id)}>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
                                         {p.flagA && <img src={p.flagA} alt="" className="w-6 h-6 object-contain" />}
@@ -246,8 +585,8 @@ function AbaPartidas() {
                             </div>
 
                             {expandida === p.id && (
-                                <div className="border-t border-gray-700 px-5 py-4 bg-gray-900/30">
-                                    <div className="flex flex-wrap gap-4 items-end">
+                                <div className="border-t border-gray-700 px-5 py-4 bg-gray-900/30 space-y-4">
+                                    <div className="flex flex-wrap gap-3 items-end">
                                         <div>
                                             <label className="text-gray-400 text-xs mb-1 block">Alterar status</label>
                                             <div className="flex gap-2">
@@ -268,24 +607,73 @@ function AbaPartidas() {
                                             </div>
                                         </div>
 
-                                        {p.statusPartida === 'Concluida' && !p.resultadoProcessado && (
+                                        {podeFinalizar(p) && (
                                             <button
-                                                onClick={() => processar(p.id)}
-                                                disabled={processando === p.id}
-                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-yellow-500 text-black text-sm font-bold transition disabled:opacity-60">
-                                                <i className={`fa-solid fa-trophy ${processando === p.id ? "animate-pulse" : ""}`}></i>
-                                                {processando === p.id ? "Processando..." : "Processar Resultado"}
+                                                onClick={e => { e.stopPropagation(); setModalFinalizar(p); }}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-green-600 text-black text-sm font-bold transition">
+                                                <i className="fa-solid fa-flag-checkered"></i>
+                                                Finalizar Partida
                                             </button>
                                         )}
 
-                                        {p.statusPartida === 'Concluida' && p.resultadoProcessado && (
+                                        {(p.statusPartida === 'Concluida' || p.statusPartida === 'Cancelada') && !p.resultadoProcessado && (
                                             <button
                                                 onClick={() => processar(p.id)}
-                                                disabled={processando === p.id}
-                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition disabled:opacity-60">
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition
+                                                    ${p.statusPartida === 'Cancelada'
+                                                        ? 'bg-red-700 hover:bg-red-600 text-white'
+                                                        : 'bg-accent hover:bg-yellow-500 text-black'}`}>
+                                                <i className={`fa-solid ${p.statusPartida === 'Cancelada' ? 'fa-rotate-left' : 'fa-trophy'}`}></i>
+                                                {p.statusPartida === 'Cancelada' ? 'Reembolsar Palpites' : 'Processar Resultado'}
+                                            </button>
+                                        )}
+
+                                        {(p.statusPartida === 'Concluida' || p.statusPartida === 'Cancelada') && p.resultadoProcessado && (
+                                            <button
+                                                onClick={() => processar(p.id)}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition">
                                                 <i className="fa-solid fa-rotate"></i>
                                                 Reprocessar
                                             </button>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <p className="text-gray-500 text-xs font-semibold uppercase mb-2">Bolões desta partida</p>
+                                        {carregandoBolaoes[p.id] ? (
+                                            <div className="text-gray-500 text-xs py-2"><i className="fa-solid fa-spinner animate-spin mr-2"></i>Carregando...</div>
+                                        ) : (boloesPartida[p.id] || []).length === 0 ? (
+                                            <p className="text-gray-600 text-xs">Nenhum bolão cadastrado para esta partida.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {(boloesPartida[p.id] || []).map(b => (
+                                                    <button
+                                                        key={b.bolaoId}
+                                                        onClick={() => setModalPagamentos({ bolaoId: b.bolaoId, nomeBolao: b.nomeBolao })}
+                                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-gray-600 transition text-left">
+                                                        <div className="flex items-center gap-3">
+                                                            <i className="fa-solid fa-coins text-accent text-sm"></i>
+                                                            <div>
+                                                                <p className="text-white text-sm font-semibold">{b.nomeBolao}</p>
+                                                                <p className="text-gray-500 text-xs">{b.totalPalpites} palpite(s) pagos</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {b.premiosEnviados > 0 && (
+                                                                <span className="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full font-semibold">
+                                                                    <i className="fa-solid fa-check mr-1"></i>{b.premiosEnviados} pagos
+                                                                </span>
+                                                            )}
+                                                            {b.erros > 0 && (
+                                                                <span className="text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full font-semibold">
+                                                                    <i className="fa-solid fa-xmark mr-1"></i>{b.erros} erro(s)
+                                                                </span>
+                                                            )}
+                                                            <i className="fa-solid fa-chevron-right text-gray-600 text-xs"></i>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -387,43 +775,183 @@ function AbaUsuarios() {
     );
 }
 
+const TIPOS_LOG = [
+    { value: null, label: "Todos", color: "text-gray-400", bg: "bg-gray-700/40" },
+    { value: 0, label: "Bolão Criado", color: "text-blue-400", bg: "bg-blue-900/30" },
+    { value: 1, label: "Palpite Criado", color: "text-purple-400", bg: "bg-purple-900/30" },
+    { value: 2, label: "Jogo Finalizado", color: "text-green-400", bg: "bg-green-900/30" },
+    { value: 3, label: "Prêmio Resgatado", color: "text-yellow-400", bg: "bg-yellow-900/30" },
+    { value: 4, label: "Transação", color: "text-accent", bg: "bg-green-900/20" },
+    { value: 5, label: "Notif. MP", color: "text-cyan-400", bg: "bg-cyan-900/30" },
+    { value: 6, label: "Carteira Creditada", color: "text-emerald-400", bg: "bg-emerald-900/30" },
+    { value: 7, label: "Reembolso", color: "text-orange-400", bg: "bg-orange-900/30" },
+];
+
+function tipoLogInfo(tipo) {
+    return TIPOS_LOG.find(t => t.value === tipo) || TIPOS_LOG[0];
+}
+
 function AbaLogs() {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [busca, setBusca] = useState("");
+    const [tipoFiltro, setTipoFiltro] = useState(null);
+    const [pagina, setPagina] = useState(1);
+    const [temMais, setTemMais] = useState(false);
 
-    useEffect(() => {
-        adminService.getLogs()
-            .then(data => setLogs(data || []))
-            .finally(() => setLoading(false));
+    const carregar = useCallback(async (tipo, pg) => {
+        setLoading(true);
+        try {
+            const data = await adminService.getLogs(tipo, pg);
+            const lista = Array.isArray(data) ? data : (data?.items || data?.logs || []);
+            if (pg === 1) {
+                setLogs(lista);
+            } else {
+                setLogs(prev => [...prev, ...lista]);
+            }
+            setTemMais(lista.length >= 50);
+        } catch {
+            setLogs([]);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const filtrados = logs.filter(l => l.toLowerCase().includes(busca.toLowerCase()));
+    useEffect(() => {
+        setPagina(1);
+        carregar(tipoFiltro, 1);
+    }, [tipoFiltro, carregar]);
+
+    const carregarMais = () => {
+        const prox = pagina + 1;
+        setPagina(prox);
+        carregar(tipoFiltro, prox);
+    };
+
+    const formatarData = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
 
     return (
         <div>
-            <input
-                type="text"
-                placeholder="Filtrar logs..."
-                value={busca}
-                onChange={e => setBusca(e.target.value)}
-                className="w-full bg-dark border border-gray-700 rounded-lg px-4 py-2 text-white text-sm mb-5 placeholder-gray-500" />
-            {loading ? (
+            <div className="flex flex-wrap gap-2 mb-5">
+                {TIPOS_LOG.map(t => (
+                    <button
+                        key={String(t.value)}
+                        onClick={() => setTipoFiltro(t.value)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border
+                            ${tipoFiltro === t.value
+                                ? `${t.bg} ${t.color} border-current`
+                                : 'bg-transparent text-gray-500 border-gray-700 hover:text-gray-300'}`}>
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {loading && pagina === 1 ? (
                 <div className="text-center text-gray-400 py-12">
                     <i className="fa-solid fa-spinner animate-spin text-2xl"></i>
                 </div>
+            ) : logs.length === 0 ? (
+                <p className="text-gray-500 text-center py-10">Nenhum log encontrado.</p>
             ) : (
-                <div className="bg-dark border border-gray-700 rounded-xl p-4 max-h-[520px] overflow-y-auto font-mono text-xs space-y-1">
-                    {filtrados.slice(0, 200).map((log, i) => (
-                        <p key={i} className={
-                            log.includes("ERROR") ? "text-red-400" :
-                            log.includes("SYSTEM") ? "text-blue-400" :
-                            log.includes("FINANCE") ? "text-accent" :
-                            "text-gray-400"
-                        }>{log}</p>
-                    ))}
+                <div className="space-y-1.5">
+                    {logs.map((log, i) => {
+                        const info = tipoLogInfo(log.tipo);
+                        return (
+                            <div key={log.id || i} className="bg-dark border border-gray-700/60 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
+                                <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-md mt-0.5 ${info.bg} ${info.color}`}>
+                                    {info.label}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white text-sm leading-snug">{log.mensagem}</p>
+                                    {log.referencia && (
+                                        <p className="text-gray-600 text-xs mt-0.5 font-mono truncate">ref: {log.referencia}</p>
+                                    )}
+                                </div>
+                                <span className="shrink-0 text-gray-600 text-xs whitespace-nowrap mt-0.5">
+                                    {formatarData(log.dataHora)}
+                                </span>
+                            </div>
+                        );
+                    })}
+                    {temMais && (
+                        <div className="text-center pt-3">
+                            <button
+                                onClick={carregarMais}
+                                disabled={loading}
+                                className="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition disabled:opacity-60">
+                                {loading ? <i className="fa-solid fa-spinner animate-spin mr-2"></i> : null}
+                                Carregar mais
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
+        </div>
+    );
+}
+
+function AbaChavePix() {
+    const [tipo, setTipo] = useState(0);
+    const [chave, setChave] = useState("");
+    const [salvando, setSalvando] = useState(false);
+    const [toast, setToast] = useState(null);
+
+    const showToast = (msg, t = "ok") => setToast({ msg, tipo: t });
+
+    const salvar = async () => {
+        if (!chave.trim()) { showToast("Informe a chave PIX", "erro"); return; }
+        setSalvando(true);
+        try {
+            await usuarioService.registrarChavePix(tipo, chave.trim());
+            showToast("Chave PIX registrada com sucesso!");
+        } catch {
+            showToast("Erro ao registrar chave PIX", "erro");
+        } finally {
+            setSalvando(false);
+        }
+    };
+
+    return (
+        <div className="max-w-md">
+            {toast && <Toast msg={toast.msg} tipo={toast.tipo} onClose={() => setToast(null)} />}
+            <p className="text-gray-400 text-sm mb-6">
+                Cadastre sua chave PIX para receber o prêmio automaticamente quando ganhar um bolão.
+            </p>
+            <div className="space-y-4">
+                <div>
+                    <label className="text-gray-400 text-sm mb-1 block">Tipo de chave</label>
+                    <select
+                        value={tipo}
+                        onChange={e => setTipo(parseInt(e.target.value))}
+                        className="w-full bg-dark border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm">
+                        {TIPOS_CHAVE_PIX.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-gray-400 text-sm mb-1 block">Chave PIX</label>
+                    <input
+                        type="text"
+                        value={chave}
+                        onChange={e => setChave(e.target.value)}
+                        placeholder={tipo === 0 ? "000.000.000-00" : tipo === 1 ? "email@exemplo.com" : tipo === 2 ? "+55 (11) 00000-0000" : "Chave aleatória"}
+                        className="w-full bg-dark border border-gray-600 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600" />
+                </div>
+                <button
+                    onClick={salvar}
+                    disabled={salvando}
+                    className="w-full py-2.5 rounded-lg bg-primary hover:bg-green-600 text-black text-sm font-bold transition disabled:opacity-60">
+                    {salvando ? "Salvando..." : "Salvar chave PIX"}
+                </button>
+            </div>
+            <div className="mt-6 bg-dark border border-gray-700 rounded-xl p-4">
+                <p className="text-gray-400 text-xs leading-relaxed">
+                    <i className="fa-solid fa-circle-info text-blue-400 mr-2"></i>
+                    A chave PIX é usada para enviar automaticamente os prêmios dos bolões ao processar o resultado de uma partida. Certifique-se de usar uma chave válida e ativa.
+                </p>
+            </div>
         </div>
     );
 }
@@ -435,6 +963,7 @@ export function Admin() {
         { key: "partidas", label: "Partidas", icon: "fa-futbol" },
         { key: "usuarios", label: "Usuários", icon: "fa-users" },
         { key: "logs", label: "Logs do Sistema", icon: "fa-terminal" },
+        { key: "pix", label: "Minha Chave PIX", icon: "fa-qrcode" },
     ];
 
     return (
@@ -461,6 +990,7 @@ export function Admin() {
                 {aba === "partidas" && <AbaPartidas />}
                 {aba === "usuarios" && <AbaUsuarios />}
                 {aba === "logs" && <AbaLogs />}
+                {aba === "pix" && <AbaChavePix />}
             </div>
         </div>
     );

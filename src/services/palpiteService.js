@@ -176,5 +176,15 @@ export const palpiteService = {
             console.error(`Erro ao validar palpite para bolão ${bolaoId}:`, error);
             throw error;
         }
+    },
+
+    resgatarPremio: async (palpiteId, chavePix) => {
+        try {
+            const response = await api.post(`/bolao/palpite/${palpiteId}/resgatar`, { chavePix });
+            return { success: true, data: response.data };
+        } catch (error) {
+            const msg = error.response?.data?.message || error.response?.data || 'Erro ao resgatar prêmio.';
+            return { success: false, message: msg };
+        }
     }
 };

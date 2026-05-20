@@ -69,7 +69,7 @@ npm run dev
 ✓ Sucesso:
   - Toast verde "Palpite registrado"
   - Auto-dismiss em ~4s
-  - Redireciona para /meus-palpites
+  - Redireciona para /palpite
 ```
 
 ### Cenário 2: Criar Palpite - Vencedor 1x2
@@ -100,7 +100,7 @@ npm run dev
   
 ✓ Sucesso:
   - Toast verde
-  - Redireciona para /meus-palpites
+  - Redireciona para /palpite
 ```
 
 ### Cenário 3: Prazo Encerrado
@@ -139,7 +139,7 @@ npm run dev
 
 #### Setup
 1. Login no app
-2. Ir para /meus-palpites
+2. Ir para /palpite
 
 #### Teste
 ```
@@ -356,7 +356,7 @@ npm run dev
 Após deploy, monitorar:
 
 ### Performance
-- Tempo de carregamento de /meus-palpites
+- Tempo de carregamento de /palpite
 - Tempo de carregamento de /palpite/:id
 - Taxa de erro nas requisições
 

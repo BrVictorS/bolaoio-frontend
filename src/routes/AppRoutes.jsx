@@ -15,6 +15,8 @@ import { MeusBolaoes } from '../pages/meus-bolaoes/MeusBolaoes.jsx';
 import { MeusPalpites } from '../pages/palpite/MeusPalpites.jsx';
 import Palpite from '../pages/palpite/Palpite.jsx';
 import { Admin } from '../pages/admin/Admin.jsx';
+import { Settings } from '../pages/settings/Settings.jsx';
+import { Wallet } from '../pages/wallet/Wallet.jsx';
 
 export function AppRoutes() {
     return (
@@ -41,6 +43,8 @@ export function AppRoutes() {
                         <Route path="/palpite" element={<MeusPalpites />} />
                         <Route path="/palpite/:idBolao/palpite" element={<Palpite />} />
                         <Route path="/admin" element={<Admin />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/carteira" element={<Wallet />} />
                     </Route>
                 </Route>
             </Routes>

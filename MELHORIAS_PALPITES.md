@@ -284,7 +284,7 @@
 9. Seja redirecionado para "Meus Palpites"
 
 ### Para Visualizar Palpites
-1. Navegue para `/meus-palpites`
+1. Navegue para `/palpite`
 2. Use filtros se desejar
 3. Visualize status, palpite e resultado
 4. Clique "ZAP" para compartilhar no WhatsApp
