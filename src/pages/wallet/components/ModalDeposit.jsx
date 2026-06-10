@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { walletService } from "../../../services/walletService";
+import { bolaoService } from "../../../services/bolaoService";
 
 export function ModalDeposit({ isOpen, onClose, onSuccess }) {
     const [amount, setAmount] = useState("");
@@ -7,8 +8,20 @@ export function ModalDeposit({ isOpen, onClose, onSuccess }) {
     const [pixData, setPixData] = useState(null);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState("");
+    const [taxaPercent, setTaxaPercent] = useState(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        bolaoService.getTaxas()
+            .then(data => setTaxaPercent(Number(data.totalPercent)))
+            .catch(() => setTaxaPercent(null));
+    }, [isOpen]);
 
     if (!isOpen) return null;
+
+    const valorNumerico = parseFloat(amount) || 0;
+    const valorTaxa = taxaPercent !== null ? valorNumerico * (taxaPercent / 100) : null;
+    const valorFinal = valorTaxa !== null ? valorNumerico + valorTaxa : null;
 
     function handleSelectAmount(value) {
         setAmount(String(value));
@@ -111,6 +124,19 @@ export function ModalDeposit({ isOpen, onClose, onSuccess }) {
                                         className="w-full bg-dark border border-gray-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:border-primary focus:outline-none font-bold text-lg"
                                     />
                                 </div>
+
+                                {valorNumerico > 0 && taxaPercent !== null && (
+                                    <div className="mt-3 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-2 text-xs text-yellow-300 space-y-1">
+                                        <div className="flex justify-between">
+                                            <span>Taxa administrativa ({taxaPercent}%)</span>
+                                            <span>+ {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorTaxa)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold border-t border-yellow-700/30 pt-1">
+                                            <span className="text-yellow-200">Total cobrado via PIX</span>
+                                            <span className="text-yellow-200">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorFinal)}</span>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {error && (
                                     <p className="text-red-400 text-xs mt-2 flex items-center gap-1">

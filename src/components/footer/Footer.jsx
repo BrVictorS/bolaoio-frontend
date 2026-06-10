@@ -24,8 +24,8 @@ export function Footer() {
           <h4 className="text-white font-bold mb-4">Siga o Hexa</h4>
           <div className="flex gap-4 text-gray-400">
             <i className="fa-brands fa-instagram hover:text-accent cursor-pointer text-xl transition"></i>
-            <i className="fa-brands fa-twitter hover:text-accent cursor-pointer text-xl transition"></i>
-            <i className="fa-brands fa-tiktok hover:text-accent cursor-pointer text-xl transition"></i>
+            {/* <i className="fa-brands fa-twitter hover:text-accent cursor-pointer text-xl transition"></i>
+            <i className="fa-brands fa-tiktok hover:text-accent cursor-pointer text-xl transition"></i> */}
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ export function Wallet() {
                 {/* Coluna esquerda */}
                 <div className="lg:col-span-1 space-y-6">
                     <Balance balance={balance} loading={loadingBalance} onDeposit={fetchData} />
-                    <DailyLimit />
+                    
                 </div>
 
                 {/* Coluna direita — histórico */}

@@ -28,4 +28,8 @@ export const bolaoService = {
         const response = await api.get('/bolao/taxas');
         return response.data;
     },
+    getParticipantesBolao: async (bolaoId) => {
+        const response = await api.get(`/bolao/${bolaoId}/participantes`);
+        return response.data;
+    },
 };

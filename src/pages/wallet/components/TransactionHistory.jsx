@@ -153,6 +153,7 @@ export function TransactionHistory({ extrato = [], loading = false }) {
                                     extrato.map((item, index) => {
                                         const isDeposito = item.descricao?.toLowerCase().includes('deposito') ||
                                                            item.descricao?.toLowerCase().includes('depósito');
+                                        const isAposta = item.descricao?.toLowerCase().includes('aposta');
                                         const isPendente = item.status === 'Processando';
                                         const isCarregando = carregandoId === item.id;
 
@@ -190,14 +191,33 @@ export function TransactionHistory({ extrato = [], loading = false }) {
                                                             {item.status}
                                                         </span>
                                                     )}
+                                                    {item.statusSaque && (
+                                                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] border font-bold ${
+                                                            item.statusSaque === 'Pago'
+                                                                ? 'text-green-400 border-green-700/50 bg-green-900/20'
+                                                                : item.statusSaque === 'Pendente'
+                                                                ? 'text-yellow-400 border-yellow-700/50 bg-yellow-900/20'
+                                                                : item.statusSaque === 'Rejeitado'
+                                                                ? 'text-red-400 border-red-700/50 bg-red-900/20'
+                                                                : 'text-gray-400 border-gray-700/50'
+                                                        }`}>
+                                                            {item.statusSaque}
+                                                        </span>
+                                                    )}
+                                                    {item.motivoRejeicao && (
+                                                        <div className="mt-1 text-[9px] text-red-300 bg-red-900/20 border border-red-700/30 rounded px-2 py-1 inline-block">
+                                                            <i className="fa-solid fa-exclamation-circle mr-1"></i>
+                                                            {item.motivoRejeicao}
+                                                        </div>
+                                                    )}
                                                 </td>
 
                                                 {/* Entrada */}
                                                 <td className="px-4 py-3 text-right font-mono text-xs">
-                                                    {item.valorEntrada != null
-                                                        ? <span className="text-gray-300">{fmt(item.valorEntrada)}</span>
-                                                        : isDeposito
+                                                    {isDeposito
                                                         ? <span className="text-green-400 font-bold">{fmt(item.valor)}</span>
+                                                        : isAposta
+                                                        ? <span className="text-red-400 font-bold">-{fmt(item.valorEntrada)}</span>
                                                         : <span className="text-gray-600">—</span>
                                                     }
                                                 </td>
@@ -212,9 +232,10 @@ export function TransactionHistory({ extrato = [], loading = false }) {
 
                                                 {/* Total */}
                                                 <td className={`px-4 py-3 text-right font-bold font-mono ${
-                                                    isDeposito ? 'text-green-400' : 'text-red-400'
+                                                    isDeposito ? 'text-green-400' : isAposta ? 'text-red-400' : 'text-yellow-400'
                                                 }`}>
-                                                    {isDeposito ? '+' : '-'} {fmt(Math.abs(item.valor+ item.valor*item.valorTaxas))}
+                                                    {isDeposito ? '+' : '-'} 
+                                                    {isAposta ? fmt(Math.abs(item.valorEntrada)) : fmt(Math.abs(item.valor+ item.valorTaxas))}
                                                 </td>
 
                                                 {/* Ação PIX — só para depósitos pendentes */}

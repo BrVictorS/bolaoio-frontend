@@ -36,10 +36,10 @@ export function Home() {
         </section>
 
         {/* Estatísticas / Destaques */}
-        <section className="py-16 bg-card/30">
+        {/* <section className="py-16 bg-card/30">
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: "fa-users", label: "Jogadores Ativos", val: "+150k" },
+              { icon: "fa-users", label: "Reúna sua galera", val: "+150k" },
               { icon: "fa-shield-halved", label: "Grupos Criados", val: "12.430" },
               { icon: "fa-circle-dollar-to-slot", label: "Prêmios em Jogo", val: "R$ 50k" }
             ].map((item, i) => (
@@ -50,7 +50,7 @@ export function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
       </main>
 
       <Footer />

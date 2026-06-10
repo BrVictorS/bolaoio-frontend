@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { authService } from '../../services/authService';
+import { Logo } from '../../components/logo/Logo';
 
 export function ResetPassword() {
   const navigate = useNavigate();
@@ -43,6 +44,9 @@ export function ResetPassword() {
   return (
     <div className="w-full max-w-md fade-in">
       <div className="text-center mb-8">
+        <Link to="/" className="inline-block mb-6 hover:opacity-80 transition">
+          <Logo size="md" />
+        </Link>
         <h2 className="text-3xl font-bold text-white mb-2">Redefinir senha</h2>
         <p className="text-gray-400">Crie uma nova senha para sua conta.</p>
       </div>

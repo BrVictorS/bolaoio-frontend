@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '../logo/Logo';
-
 export function Navbar() {
   return (
     <nav className="bg-dark/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
@@ -10,11 +9,11 @@ export function Navbar() {
             <Logo size="md" />
           </Link>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+          {/* <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
             <Link to="/" className="hover:text-primary transition">Início</Link>
             <Link to="/ranking" className="hover:text-primary transition">Ranking Geral</Link>
             <Link to="/regras" className="hover:text-primary transition">Como Jogar</Link>
-          </div>
+          </div> */}
 
           <div className="flex items-center gap-4">
             <Link to="/login" className="text-gray-300 hover:text-white text-sm font-medium">Entrar</Link>

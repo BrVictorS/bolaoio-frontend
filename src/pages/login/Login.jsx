@@ -2,6 +2,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from 'react';
 import { authService } from "../../services/authService";
 import { googleAuth } from "../../services/googleAuth";
+import { Logo } from "../../components/logo/Logo";
 
 export function Login() {
   const navigate = useNavigate();
@@ -16,21 +17,21 @@ export function Login() {
     }
   }, [navigate]);
 
+  const handleCredential = async (response) => {
+    try {
+      const dto = await authService.googleLogin(response.credential);
+      navigate(dto.requerComplementoCadastro ? "/complete-profile" : redirectTo, { replace: true });
+    } catch (err) {
+      setGoogleError(err.detail || err.message || "Falha ao autenticar com Google");
+    }
+  };
+
   useEffect(() => {
     if (!googleAuth.isConfigured()) {
       setGoogleError("Login com Google não configurado.");
       return;
     }
     if (!googleBtnRef.current) return;
-
-    const handleCredential = async (response) => {
-      try {
-        const dto = await authService.googleLogin(response.credential);
-        navigate(dto.requerComplementoCadastro ? "/complete-profile" : redirectTo, { replace: true });
-      } catch (err) {
-        setGoogleError(err.detail || err.message || "Falha ao autenticar com Google");
-      }
-    };
 
     googleAuth.renderButton(googleBtnRef.current, handleCredential).catch((err) => {
       setGoogleError(err.message);
@@ -54,7 +55,13 @@ export function Login() {
       await authService.login(formData.email, formData.senha);
       navigate(authService.requerComplementoCadastro() ? "/complete-profile" : redirectTo);
     } catch (error) {
-      setErro(error.detail || error.message || "E-mail ou senha inválidos");
+      if (error.code === 'google_account') {
+        googleAuth.prompt(handleCredential).catch(() => {
+          setErro("Esta conta usa Google. Clique em 'Entrar com Google'.");
+        });
+      } else {
+        setErro(error.detail || error.message || "E-mail ou senha inválidos");
+      }
     } finally {
       setEnviando(false);
     }
@@ -69,8 +76,11 @@ export function Login() {
         <i className="fa-solid fa-arrow-left"></i> Voltar
       </Link>
 
-      <div id="view-login" className="w-full max-w-md fade-in">
+      <div id="view-login" className="w-full max-w-md fade-in ">
         <div className="text-center mb-10">
+          <Link to="/" className="inline-block mb-6 hover:opacity-80 transition">
+            <Logo size="md" />
+          </Link>
           <h2 className="text-3xl font-bold text-white mb-2">Bem-vindo de volta!</h2>
           <p className="text-gray-400">Insira suas credenciais para acessar seus bolões.</p>
         </div>

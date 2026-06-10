@@ -178,12 +178,25 @@ export const palpiteService = {
         }
     },
 
-    resgatarPremio: async (palpiteId, chavePix) => {
+    resgatarPremio: async (palpiteId, { tipoResgate, chavePix }) => {
         try {
-            const response = await api.post(`/bolao/palpite/${palpiteId}/resgatar`, { chavePix });
+            const response = await api.post(`/bolao/palpite/${palpiteId}/resgatar`, {
+                tipoResgate,
+                chavePix: chavePix ?? null,
+            });
             return { success: true, data: response.data };
         } catch (error) {
             const msg = error.response?.data?.message || error.response?.data || 'Erro ao resgatar prêmio.';
+            return { success: false, message: msg };
+        }
+    },
+
+    getDetalhesBolao: async (bolaoId) => {
+        try {
+            const response = await api.get(`/bolao/${bolaoId}/detalhes`);
+            return { success: true, data: response.data };
+        } catch (error) {
+            const msg = error.response?.data?.detail || error.response?.data?.message || 'Erro ao carregar detalhes do bolão.';
             return { success: false, message: msg };
         }
     }

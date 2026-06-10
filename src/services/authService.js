@@ -29,9 +29,9 @@ export const authService = {
         }
     },
 
-    register: async (nome, email, senha, cpf) => {
+    register: async (nome, email, senha, cpf, aceitouTermos = false) => {
         try {
-            const response = await api.post('/auth/register', RegisterRequestDto(nome, email, senha, cpf));
+            const response = await api.post('/auth/register', RegisterRequestDto(nome, email, senha, cpf, aceitouTermos));
             return mapRegisterResponseDto(response.data);
         } catch (error) {
             throw error.response?.data || { message: 'Erro ao conectar com o servidor' };

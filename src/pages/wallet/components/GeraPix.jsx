@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 
-export default function GeraPix({ onGerar }) {
+export default function GeraPix({ onGerar, pixData }) {
     const [pixData, setPixData] = useState(null);
 
 

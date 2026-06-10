@@ -2,6 +2,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { authService } from '../../services/authService';
 import { googleAuth } from '../../services/googleAuth';
+import { Logo } from '../../components/logo/Logo';
 
 export function Register() {
   const navigate = useNavigate();
@@ -36,15 +37,16 @@ export function Register() {
     email: '',
     cpf: '',
     senha: '',
-    confirmarSenha: ''
+    confirmarSenha: '',
+    aceitouTermos: false
   });
 
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleRegister = async (event) => {
@@ -56,9 +58,14 @@ export function Register() {
       return;
     }
 
+    if (!formData.aceitouTermos) {
+      setErro("Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar.");
+      return;
+    }
+
     setEnviando(true);
     try {
-      await authService.register(formData.nome, formData.email, formData.senha, formData.cpf);
+      await authService.register(formData.nome, formData.email, formData.senha, formData.cpf, formData.aceitouTermos);
       navigate(`/login${redirectTo !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`);
     } catch (error) {
       setErro(error.detail || error.message || "Erro ao criar conta");
@@ -70,6 +77,9 @@ export function Register() {
   return (
     <div className="w-full max-w-md fade-in">
       <div className="text-center mb-8">
+        <Link to="/" className="inline-block mb-6 hover:opacity-80 transition">
+          <Logo size="md" />
+        </Link>
         <h2 className="text-3xl font-bold text-white mb-2">Crie sua Conta</h2>
         <p className="text-gray-400">Prepare-se para o hexa. É rápido e fácil.</p>
       </div>
@@ -169,9 +179,20 @@ export function Register() {
         </div>
 
         <div className="flex items-start gap-3 mt-2">
-          <input type="checkbox" id="terms" className="mt-1 accent-primary w-4 h-4 cursor-pointer" required />
+          <input
+            type="checkbox"
+            id="terms"
+            name="aceitouTermos"
+            checked={formData.aceitouTermos}
+            onChange={handleChange}
+            className="mt-1 accent-primary w-4 h-4 cursor-pointer"
+          />
           <label htmlFor="terms" className="text-xs text-gray-400 cursor-pointer">
-            Eu concordo com os <a href="#" className="text-primary hover:underline">Termos de Uso</a> e <a href="#" className="text-primary hover:underline">Política de Privacidade</a> do Bollao.com.
+            Eu li e concordo com os{' '}
+            <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Termos de Uso</a>
+            {' '}e a{' '}
+            <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Política de Privacidade</a>
+            {' '}do Bollao.com.
           </label>
         </div>
 

@@ -20,7 +20,7 @@ export function Header({ balance }) {
                         className="w-full bg-dark text-sm rounded-full pl-10 pr-4 py-2 border border-gray-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Buscar seleções (Brasil, França, Argentina)..." />
                 </div>
 
-                <div className="flex items-center gap-4">
+                {/* <div className="flex items-center gap-4">
                     <div className="hidden md:block bg-gray-700/50 px-3 py-1 rounded-full text-xs text-gray-300 border border-gray-600">
                         <i className="fa-regular fa-clock text-accent mr-1"></i> Próximo jogo: 15min
                     </div>
@@ -29,7 +29,7 @@ export function Header({ balance }) {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
                   
-                </div>
+                </div> */}
             </header>
         </>
     );

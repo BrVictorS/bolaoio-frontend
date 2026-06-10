@@ -36,7 +36,7 @@ export function Dashboard() {
     }
 
     return (
-        <div id="app-content" className="flex-1 overflow-y-auto p-6 bg-dark scroll-smooth">
+        <div id="app-content" className="flex-1 overflow-y-auto p-6  scroll-smooth">
             <div id="view-home" className="fade-in">
                 <div className="w-full bg-gradient-to-r from-green-900 to-blue-900 rounded-2xl p-6 mb-8 border border-white/10 relative overflow-hidden">
                     <div className="relative z-10">

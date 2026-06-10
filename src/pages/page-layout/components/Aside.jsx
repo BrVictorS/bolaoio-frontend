@@ -69,6 +69,14 @@ export function Aside({ balance }) {
                     <i className="fa-solid fa-plus w-5"></i> Criar Bolão
                 </Link>
 
+                <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Suporte</div>
+
+                <Link
+                    to="/tickets"
+                    className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white transition flex items-center gap-3">
+                    <i className="fa-solid fa-headset w-5"></i> Meus Tickets
+                </Link>
+
                 {/* CORREÇÃO 3: Bloco Admin Único e Correto */}
                 {isAdmin && (
                     <>

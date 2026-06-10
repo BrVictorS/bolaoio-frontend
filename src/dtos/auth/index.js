@@ -1,7 +1,7 @@
 export const LoginRequestDto = (email, senha) => ({ Email: email, Senha: senha });
 export const mapLoginResponseDto = (data) => ({ token: data?.token, nome: data?.nome, email: data?.email });
 
-export const RegisterRequestDto = (nome, email, senha, cpf) => ({ Nome: nome, Email: email, Senha: senha, Cpf: cpf });
+export const RegisterRequestDto = (nome, email, senha, cpf, aceitouTermos = false) => ({ Nome: nome, Email: email, Senha: senha, Cpf: cpf, AceitouTermos: aceitouTermos });
 export const mapRegisterResponseDto = (data) => ({ id: data?.id, nome: data?.nome, email: data?.email });
 
 export const GoogleLoginRequestDto = (idToken) => ({ IdToken: idToken });

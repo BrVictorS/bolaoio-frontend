@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminService } from "../../services/adminService";
 import { usuarioService } from "../../services/usuarioService";
+import { ticketService } from "../../services/ticketService";
+import { SaquesAdmin } from "./SaquesAdmin";
 
 const TIPOS_CHAVE_PIX = [
     { value: 0, label: "CPF" },
@@ -47,22 +49,8 @@ function Toast({ msg, tipo, onClose }) {
 
 function ModalResultadoPagamento({ resultado, onClose }) {
     if (!resultado) return null;
-    const { boloesProcessados, totalVencedores, totalPagosComSucesso, totalReembolsados, totalErros,
-        totalArrecadado, taxaAdministrativa, totalPremios, saldoInsuficiente, mensagem, detalhesPagamentos } = resultado;
-    const [reenviando, setReenviando] = useState({});
-    const [statusLocal, setStatusLocal] = useState({});
-
-    const reenviar = async (palpiteId) => {
-        setReenviando(prev => ({ ...prev, [palpiteId]: true }));
-        try {
-            const res = await adminService.reenviarPremio(palpiteId);
-            setStatusLocal(prev => ({ ...prev, [palpiteId]: res }));
-        } catch (e) {
-            setStatusLocal(prev => ({ ...prev, [palpiteId]: { sucesso: false, erro: e?.response?.data?.detail || 'Erro ao reenviar' } }));
-        } finally {
-            setReenviando(prev => ({ ...prev, [palpiteId]: false }));
-        }
-    };
+    const { boloesProcessados, totalVencedores, totalReembolsados, totalErros,
+        totalArrecadado, mensagem, detalhesPagamentos } = resultado;
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -70,23 +58,19 @@ function ModalResultadoPagamento({ resultado, onClose }) {
                 <div className="p-6 border-b border-gray-700 flex justify-between items-start">
                     <div>
                         <h2 className="text-white font-bold text-lg">Resultado do Processamento</h2>
-                        <p className={`text-sm mt-1 ${saldoInsuficiente ? 'text-red-400' : 'text-gray-400'}`}>{mensagem}</p>
+                        <p className="text-gray-400 text-sm mt-1">{mensagem}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-white transition text-xl"><i className="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-gray-700">
+                <div className="p-6 grid grid-cols-3 gap-4 border-b border-gray-700">
                     <div className="bg-dark rounded-xl p-4 text-center">
-                        <p className="text-gray-400 text-xs mb-1">Arrecadado</p>
+                        <p className="text-gray-400 text-xs mb-1">Total em jogo</p>
                         <p className="text-white font-bold text-lg">R${totalArrecadado?.toFixed(2)}</p>
                     </div>
                     <div className="bg-dark rounded-xl p-4 text-center">
-                        <p className="text-gray-400 text-xs mb-1">Taxa (plataforma)</p>
-                        <p className="text-accent font-bold text-lg">R${taxaAdministrativa?.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-dark rounded-xl p-4 text-center">
-                        <p className="text-gray-400 text-xs mb-1">Total prêmios</p>
-                        <p className="text-green-400 font-bold text-lg">R${totalPremios?.toFixed(2)}</p>
+                        <p className="text-gray-400 text-xs mb-1">Vencedores</p>
+                        <p className="text-green-400 font-bold text-lg">{totalVencedores}</p>
                     </div>
                     <div className="bg-dark rounded-xl p-4 text-center">
                         <p className="text-gray-400 text-xs mb-1">Bolões</p>
@@ -96,8 +80,8 @@ function ModalResultadoPagamento({ resultado, onClose }) {
 
                 <div className="p-6 grid grid-cols-3 gap-4 border-b border-gray-700">
                     <div className="text-center">
-                        <div className="text-2xl font-black text-green-400">{totalPagosComSucesso}</div>
-                        <div className="text-gray-400 text-xs mt-1">Pagamentos OK</div>
+                        <div className="text-2xl font-black text-green-400">{totalVencedores}</div>
+                        <div className="text-gray-400 text-xs mt-1">Vencedores</div>
                     </div>
                     <div className="text-center">
                         <div className="text-2xl font-black text-blue-400">{totalReembolsados}</div>
@@ -109,54 +93,27 @@ function ModalResultadoPagamento({ resultado, onClose }) {
                     </div>
                 </div>
 
-                {saldoInsuficiente && (
-                    <div className="mx-6 mt-4 bg-red-900/30 border border-red-700 rounded-xl p-4 flex items-start gap-3">
-                        <i className="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
-                        <p className="text-red-300 text-sm">Saldo insuficiente na conta Mercado Pago. Nenhum vencedor foi pago. Recarregue o saldo e reprocesse.</p>
-                    </div>
-                )}
-
                 {detalhesPagamentos?.length > 0 && (
                     <div className="p-6">
                         <h3 className="text-white font-semibold mb-3 text-sm">Detalhes por participante</h3>
                         <div className="space-y-2">
-                            {detalhesPagamentos.map((d, i) => {
-                                const local = statusLocal[d.palpiteId];
-                                const sucesso = local?.sucesso ?? d.sucesso;
-                                const erro = local?.erro ?? d.erro;
-                                const transacaoId = local?.transacaoId ?? d.transacaoId;
-                                const podeTentar = !sucesso && !reenviando[d.palpiteId];
-                                return (
-                                    <div key={i} className={`rounded-lg px-4 py-3 text-sm border
-                                        ${sucesso ? 'bg-green-900/20 border-green-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <i className={`fa-solid ${sucesso ? 'fa-check text-green-400' : 'fa-xmark text-red-400'}`}></i>
-                                                <div>
-                                                    <p className="text-white font-medium">{d.nomeParticipante}</p>
-                                                    {erro && <p className="text-red-400 text-xs mt-0.5">{erro}</p>}
-                                                    {transacaoId && <p className="text-gray-500 text-xs mt-0.5">ID: {transacaoId}</p>}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`font-bold ${sucesso ? 'text-green-400' : 'text-gray-500'}`}>
-                                                    R${d.valorEnviado?.toFixed(2)}
-                                                </span>
-                                                {podeTentar && (
-                                                    <button
-                                                        onClick={() => reenviar(d.palpiteId)}
-                                                        className="text-xs px-3 py-1.5 rounded-lg bg-blue-900/40 text-blue-400 hover:bg-blue-900/60 transition font-semibold">
-                                                        <i className="fa-solid fa-rotate mr-1"></i>Reenviar
-                                                    </button>
-                                                )}
-                                                {reenviando[d.palpiteId] && (
-                                                    <i className="fa-solid fa-spinner animate-spin text-blue-400 text-sm"></i>
-                                                )}
+                            {detalhesPagamentos.map((d, i) => (
+                                <div key={i} className={`rounded-lg px-4 py-3 text-sm border
+                                    ${d.sucesso ? 'bg-green-900/20 border-green-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <i className={`fa-solid ${d.sucesso ? 'fa-check text-green-400' : 'fa-xmark text-red-400'}`}></i>
+                                            <div>
+                                                <p className="text-white font-medium">{d.nomeParticipante}</p>
+                                                {d.erro && <p className="text-red-400 text-xs mt-0.5">{d.erro}</p>}
                                             </div>
                                         </div>
+                                        <span className={`font-bold ${d.sucesso ? 'text-green-400' : 'text-gray-500'}`}>
+                                            R${d.valorEnviado?.toFixed(2)}
+                                        </span>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -337,6 +294,7 @@ function AbaPartidas() {
     const [times, setTimes] = useState([]);
     const [novaPartida, setNovaPartida] = useState({ idTimeA: "", idTimeB: "", dataPartida: "" });
     const [resultadoPagamento, setResultadoPagamento] = useState(null);
+    const [consultandoResultado, setConsultandoResultado] = useState({});
     const [modalFinalizar, setModalFinalizar] = useState(null);
     const [modalPagamentos, setModalPagamentos] = useState(null);
     const [boloesPartida, setBoloesPartida] = useState({});
@@ -449,6 +407,18 @@ function AbaPartidas() {
             await carregar();
         } catch {
             showToast("Erro ao criar partida", "erro");
+        }
+    };
+
+    const verResultado = async (partidaId) => {
+        setConsultandoResultado(prev => ({ ...prev, [partidaId]: true }));
+        try {
+            const res = await adminService.consultarResultado(partidaId);
+            setResultadoPagamento(res);
+        } catch {
+            showToast("Erro ao consultar resultado da partida", "erro");
+        } finally {
+            setConsultandoResultado(prev => ({ ...prev, [partidaId]: false }));
         }
     };
 
@@ -628,12 +598,15 @@ function AbaPartidas() {
                                             </button>
                                         )}
 
-                                        {(p.statusPartida === 'Concluida' || p.statusPartida === 'Cancelada') && p.resultadoProcessado && (
+                                        {p.resultadoProcessado && (
                                             <button
-                                                onClick={() => processar(p.id)}
-                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition">
-                                                <i className="fa-solid fa-rotate"></i>
-                                                Reprocessar
+                                                onClick={() => verResultado(p.id)}
+                                                disabled={consultandoResultado[p.id]}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-60 text-white text-sm transition">
+                                                {consultandoResultado[p.id]
+                                                    ? <i className="fa-solid fa-spinner animate-spin"></i>
+                                                    : <i className="fa-solid fa-magnifying-glass-chart"></i>}
+                                                Ver Resultado
                                             </button>
                                         )}
                                     </div>
@@ -956,14 +929,197 @@ function AbaChavePix() {
     );
 }
 
+/* ─── Aba: Fluxo de Caixa ─── */
+function AbaFluxoCaixa() {
+    const [dados, setDados] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [erro, setErro] = useState('');
+
+    useEffect(() => {
+        adminService.getFluxoCaixa()
+            .then(setDados)
+            .catch(() => setErro('Erro ao carregar dados financeiros.'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0);
+
+    if (loading) return <div className="flex justify-center py-16"><i className="fa-solid fa-spinner animate-spin text-primary text-2xl"></i></div>;
+    if (erro) return <p className="text-red-400 text-sm">{erro}</p>;
+
+    const cards = [
+        { label: 'Total Depositado', value: fmt(dados?.totalDepositado), icon: 'fa-arrow-down', color: 'text-green-400' },
+        { label: 'Taxas Arrecadadas (caixa)', value: fmt(dados?.totalTaxasColetadas), icon: 'fa-percent', color: 'text-yellow-400' },
+        { label: 'Total Saques', value: fmt(dados?.totalSaques), icon: 'fa-arrow-up', color: 'text-red-400' },
+        { label: 'Prêmios Pagos', value: fmt(dados?.totalPremiosPagos), icon: 'fa-trophy', color: 'text-blue-400' },
+        { label: 'Reembolsos', value: fmt(dados?.totalReembolsos), icon: 'fa-rotate-left', color: 'text-orange-400' },
+        { label: 'Saldo do Caixa', value: fmt(dados?.saldoCaixaSistema), icon: 'fa-vault', color: 'text-emerald-400' },
+    ];
+
+    return (
+        <div>
+            <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
+                <i className="fa-solid fa-chart-line text-primary"></i> Relatório de Fluxo de Caixa
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                {cards.map(c => (
+                    <div key={c.label} className="bg-dark border border-gray-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                            <i className={`fa-solid ${c.icon} ${c.color} text-sm`}></i>
+                            <p className="text-gray-500 text-xs">{c.label}</p>
+                        </div>
+                        <p className={`text-xl font-bold font-mono ${c.color}`}>{c.value}</p>
+                    </div>
+                ))}
+            </div>
+
+            <h3 className="text-white font-semibold mb-3 text-sm">Movimentações — últimos 30 dias</h3>
+            {dados?.ultimas30Dias?.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sem movimentações no período.</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="text-gray-500 border-b border-gray-700">
+                                <th className="text-left py-2 pr-4">Data</th>
+                                <th className="text-right py-2 pr-4 text-green-400">Entradas</th>
+                                <th className="text-right py-2 pr-4 text-red-400">Saídas</th>
+                                <th className="text-right py-2 text-yellow-400">Taxas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dados?.ultimas30Dias?.map(d => (
+                                <tr key={d.data} className="border-b border-gray-800 hover:bg-gray-800/30">
+                                    <td className="py-2 pr-4 text-gray-400">{new Date(d.data).toLocaleDateString('pt-BR')}</td>
+                                    <td className="py-2 pr-4 text-right text-green-400 font-mono">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.entradas)}</td>
+                                    <td className="py-2 pr-4 text-right text-red-400 font-mono">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.saidas)}</td>
+                                    <td className="py-2 text-right text-yellow-400 font-mono">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.taxas)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ─── Aba: Tickets de Suporte (visão admin) ─── */
+function AbaTicketsAdmin() {
+    const [tickets, setTickets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [respostas, setRespostas] = useState({});
+    const [enviando, setEnviando] = useState({});
+    const [toast, setToast] = useState(null);
+
+    const carregar = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await adminService.listarTodosTicketsAdmin();
+            setTickets(data);
+        } catch { setToast({ msg: 'Erro ao carregar tickets', tipo: 'erro' }); }
+        finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { carregar(); }, [carregar]);
+
+    const handleResponder = async (ticketId) => {
+        const resp = respostas[ticketId]?.trim();
+        if (!resp) return;
+        setEnviando(v => ({ ...v, [ticketId]: true }));
+        try {
+            await adminService.responderTicket(ticketId, resp);
+            setToast({ msg: 'Resposta enviada!', tipo: 'ok' });
+            setRespostas(v => ({ ...v, [ticketId]: '' }));
+            await carregar();
+        } catch { setToast({ msg: 'Erro ao responder ticket', tipo: 'erro' }); }
+        finally { setEnviando(v => ({ ...v, [ticketId]: false })); }
+    };
+
+    const handleFechar = async (ticketId) => {
+        try {
+            await adminService.fecharTicketAdmin(ticketId);
+            setToast({ msg: 'Ticket fechado.', tipo: 'ok' });
+            await carregar();
+        } catch { setToast({ msg: 'Erro ao fechar ticket', tipo: 'erro' }); }
+    };
+
+    const STATUS_COLOR = {
+        Aberto: 'bg-blue-900/40 text-blue-300 border-blue-700/40',
+        Respondido: 'bg-green-900/40 text-green-300 border-green-700/40',
+        Fechado: 'bg-gray-800 text-gray-500 border-gray-700',
+    };
+
+    return (
+        <div>
+            {toast && <Toast msg={toast.msg} tipo={toast.tipo} onClose={() => setToast(null)} />}
+            <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
+                <i className="fa-solid fa-headset text-primary"></i> Tickets de Suporte
+            </h2>
+            {loading ? (
+                <div className="flex justify-center py-12"><i className="fa-solid fa-spinner animate-spin text-primary text-2xl"></i></div>
+            ) : tickets.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-12">Nenhum ticket aberto.</p>
+            ) : (
+                <div className="space-y-4">
+                    {tickets.map(t => (
+                        <div key={t.id} className="bg-dark border border-gray-700 rounded-xl p-5">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                                <div>
+                                    <p className="text-white font-bold">{t.titulo}</p>
+                                    <p className="text-gray-500 text-xs">{t.nomeUsuario} · {t.emailUsuario} · {new Date(t.criadoEm).toLocaleString('pt-BR')}</p>
+                                </div>
+                                <span className={`text-xs font-bold px-3 py-1 rounded-full border flex-shrink-0 ${STATUS_COLOR[t.status] || ''}`}>
+                                    {t.status}
+                                </span>
+                            </div>
+                            <p className="text-gray-400 text-sm mb-3 whitespace-pre-wrap">{t.descricao}</p>
+                            {t.respostaAdmin && (
+                                <div className="bg-green-900/20 border border-green-700/30 rounded-lg p-3 mb-3 text-xs text-green-300">
+                                    <strong>Resposta enviada:</strong> {t.respostaAdmin}
+                                </div>
+                            )}
+                            {t.status !== 'Fechado' && (
+                                <div className="flex gap-2 mt-3">
+                                    <textarea
+                                        value={respostas[t.id] || ''}
+                                        onChange={e => setRespostas(v => ({ ...v, [t.id]: e.target.value }))}
+                                        placeholder="Escreva uma resposta..."
+                                        rows={2}
+                                        className="flex-1 bg-card border border-gray-600 rounded-lg px-3 py-2 text-white text-sm resize-none focus:border-primary outline-none"
+                                    />
+                                    <div className="flex flex-col gap-2">
+                                        <button onClick={() => handleResponder(t.id)} disabled={enviando[t.id]}
+                                            className="px-3 py-2 bg-primary hover:bg-green-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition">
+                                            {enviando[t.id] ? '...' : 'Responder'}
+                                        </button>
+                                        <button onClick={() => handleFechar(t.id)}
+                                            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-bold rounded-lg transition">
+                                            Fechar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function Admin() {
     const [aba, setAba] = useState("partidas");
 
     const abas = [
         { key: "partidas", label: "Partidas", icon: "fa-futbol" },
         { key: "usuarios", label: "Usuários", icon: "fa-users" },
+        { key: "saques", label: "Saques", icon: "fa-money-bill-transfer" },
         { key: "logs", label: "Logs do Sistema", icon: "fa-terminal" },
         { key: "pix", label: "Minha Chave PIX", icon: "fa-qrcode" },
+        { key: "caixa", label: "Fluxo de Caixa", icon: "fa-chart-line" },
+        { key: "tickets", label: "Tickets", icon: "fa-headset" },
     ];
 
     return (
@@ -973,12 +1129,12 @@ export function Admin() {
                 <p className="text-gray-400 text-sm mt-1">Painel administrativo — Copa do Mundo 2026</p>
             </div>
 
-            <div className="flex gap-1 bg-dark p-1 rounded-xl border border-gray-700 mb-6 w-fit">
+            <div className="flex flex-wrap gap-1 bg-dark p-1 rounded-xl border border-gray-700 mb-6 w-fit">
                 {abas.map(a => (
                     <button
                         key={a.key}
                         onClick={() => setAba(a.key)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition
                             ${aba === a.key ? 'bg-card text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>
                         <i className={`fa-solid ${a.icon}`}></i>
                         {a.label}
@@ -989,8 +1145,11 @@ export function Admin() {
             <div className="bg-card border border-gray-700 rounded-2xl p-6">
                 {aba === "partidas" && <AbaPartidas />}
                 {aba === "usuarios" && <AbaUsuarios />}
+                {aba === "saques" && <SaquesAdmin />}
                 {aba === "logs" && <AbaLogs />}
                 {aba === "pix" && <AbaChavePix />}
+                {aba === "caixa" && <AbaFluxoCaixa />}
+                {aba === "tickets" && <AbaTicketsAdmin />}
             </div>
         </div>
     );

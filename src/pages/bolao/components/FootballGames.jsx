@@ -53,8 +53,8 @@ export function FootballGames({ games, onSelect, selectedGameId }) {
 
             {/* Lista de Jogos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-                {games.length > 0 ? (
-                    games.map((game) => (
+                {filteredGames.length > 0 ? (
+                    filteredGames.map((game) => (
                         <div 
                             key={game.id}
                             onClick={() => onSelect(game)}

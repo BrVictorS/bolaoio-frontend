@@ -1,8 +1,10 @@
-import { ModalDeposit } from "./ModalDeposit"
+import { ModalDeposit } from "./ModalDeposit";
+import { ModalSaque } from "./ModalSaque";
 import { useState } from "react";
 
 export function Balance({ balance, loading = false, onDeposit }) {
-    const [open, setOpen] = useState(false);
+    const [openDeposit, setOpenDeposit] = useState(false);
+    const [openSaque, setOpenSaque] = useState(false);
 
     return (
         <>
@@ -19,27 +21,21 @@ export function Balance({ balance, loading = false, onDeposit }) {
                         </h2>
                     )}
                     <div className="flex gap-3 mt-6">
-                        <button
-                            onClick={() => setOpen(true)}
+                        <button onClick={() => setOpenDeposit(true)}
                             className="flex-1 bg-white text-green-800 hover:bg-gray-200 py-2 rounded font-bold transition flex items-center justify-center gap-2">
-                            <i className="fa-solid fa-plus text-sm"></i>
-                            Depositar
+                            <i className="fa-solid fa-plus text-sm"></i> Depositar
                         </button>
-                        <button
-                            className="flex-1 bg-black/30 hover:bg-black/50 py-2 rounded text-white font-medium border border-white/10 transition flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
-                            <i className="fa-solid fa-arrow-up text-sm"></i>
-                            Sacar
+                        <button onClick={() => setOpenSaque(true)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded text-white font-bold border border-blue-700 transition flex items-center justify-center gap-2">
+                            <i className="fa-solid fa-arrow-up text-sm"></i> Sacar
                         </button>
                     </div>
                 </div>
                 <i className="fa-solid fa-wallet text-9xl text-white/5 absolute -bottom-8 -right-8 -rotate-12"></i>
             </div>
 
-            <ModalDeposit
-                isOpen={open}
-                onClose={() => setOpen(false)}
-                onSuccess={onDeposit}
-            />
+            <ModalDeposit isOpen={openDeposit} onClose={() => setOpenDeposit(false)} onSuccess={onDeposit} />
+            <ModalSaque isOpen={openSaque} onClose={() => setOpenSaque(false)} onSuccess={onDeposit} balance={balance} />
         </>
     );
 }

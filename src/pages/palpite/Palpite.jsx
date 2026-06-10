@@ -25,6 +25,8 @@ export default function Palpite() {
     const [erros, setErros] = useState({});
     const [isPrazoFechado, setIsPrazoFechado] = useState(false);
     const [taxas, setTaxas] = useState(null);
+    const [bolaoEncerrado, setBolaoEncerrado] = useState(false);
+    const [jaTemPalpite, setJaTemPalpite] = useState(false);
 
     // Estado para modal de recarga por saldo insuficiente
     const [showRecargaModal, setShowRecargaModal] = useState(false);
@@ -34,17 +36,35 @@ export default function Palpite() {
         const fetchBolao = async () => {
             try {
                 setLoading(true);
-                const data = await bolaoService.getBolaoById(idBolao);
-                const bolao = data.data || data;
+                const [bolaoData, palpitesData] = await Promise.all([
+                    bolaoService.getBolaoById(idBolao),
+                    palpiteService.getPalpiteByUser().catch(() => []),
+                ]);
+
+                const bolao = bolaoData.data || bolaoData;
                 setDadosBolao(bolao);
                 bolaoService.getTaxas()
-                    .then(data => setTaxas(data))
+                    .then(t => setTaxas(t))
                     .catch(() => {});
 
-                if (bolao.dtFechamento) {
-                    const dataFechamento = new Date(bolao.dtFechamento);
-                    if (new Date() > dataFechamento) setIsPrazoFechado(true);
+                // Bolão encerrado (status do backend)
+                const statusEncerrado = ['Concluido', 'Cancelado'];
+                if (statusEncerrado.includes(bolao.statusBolao)) {
+                    setBolaoEncerrado(true);
                 }
+
+                // Prazo de fechamento expirado
+                if (bolao.dtFechamento) {
+                    if (new Date() > new Date(bolao.dtFechamento)) setIsPrazoFechado(true);
+                }
+
+                // Usuário já tem palpite ativo neste bolão
+                const palpites = Array.isArray(palpitesData) ? palpitesData : [];
+                const temPalpite = palpites.some(
+                    p => p.bolaoId === bolao.id && p.statusPalpite?.toLowerCase() !== 'cancelado'
+                );
+                setJaTemPalpite(temPalpite);
+
             } catch (err) {
                 console.error("Erro ao buscar dados do bolão:", err);
                 showToast('error', 'Não foi possível carregar os dados do bolão.');
@@ -72,6 +92,8 @@ export default function Palpite() {
             if (!palpiteData.vencedor) novoErros.vencedor = 'Selecione um resultado';
         }
         if (isPrazoFechado) novoErros.prazo = 'O prazo para este bolão foi encerrado';
+        if (bolaoEncerrado) novoErros.prazo = 'Este bolão já foi encerrado';
+        if (jaTemPalpite) novoErros.prazo = 'Você já possui um palpite neste bolão';
         setErros(novoErros);
         return Object.keys(novoErros).length === 0;
     };
@@ -253,8 +275,19 @@ export default function Palpite() {
                         </div>
                     </div>
 
+                    {/* Bolão encerrado */}
+                    {bolaoEncerrado && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-3 mb-4 flex items-center gap-2">
+                            <i className="fa-solid fa-ban text-red-400 text-xl"></i>
+                            <div>
+                                <p className="text-red-400 font-bold text-sm">Bolão Encerrado</p>
+                                <p className="text-red-300 text-xs">Este bolão já foi finalizado e não aceita mais palpites.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Prazo fechado */}
-                    {isPrazoFechado && (
+                    {!bolaoEncerrado && isPrazoFechado && (
                         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-3 mb-4 flex items-center gap-2">
                             <i className="fa-solid fa-exclamation-circle text-red-400 text-xl"></i>
                             <div>
@@ -264,8 +297,19 @@ export default function Palpite() {
                         </div>
                     )}
 
+                    {/* Usuário já tem palpite */}
+                    {!bolaoEncerrado && !isPrazoFechado && jaTemPalpite && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-3 mb-4 flex items-center gap-2">
+                            <i className="fa-solid fa-circle-check text-yellow-400 text-xl"></i>
+                            <div>
+                                <p className="text-yellow-400 font-bold text-sm">Palpite já registrado</p>
+                                <p className="text-yellow-300 text-xs">Você já possui um palpite ativo neste bolão.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Formulário */}
-                    {!isPrazoFechado && (
+                    {!bolaoEncerrado && !isPrazoFechado && !jaTemPalpite && (
                         <>
                             {/* Placar Exato */}
                             {isTipoPlacarExato && (
@@ -399,8 +443,14 @@ export default function Palpite() {
                         </>
                     )}
 
-                    {isPrazoFechado && (
+                    {(bolaoEncerrado || isPrazoFechado || jaTemPalpite) && (
                         <div className="flex flex-col gap-3 border-t border-gray-700 pt-6">
+                            {jaTemPalpite && (
+                                <button onClick={() => navigate('/palpite')}
+                                    className="w-full bg-primary hover:bg-green-600 text-black font-bold py-3 rounded-2xl transition">
+                                    Ver Meus Palpites
+                                </button>
+                            )}
                             <button onClick={() => navigate('/dashboard')}
                                 className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-2xl transition">
                                 Voltar ao Dashboard

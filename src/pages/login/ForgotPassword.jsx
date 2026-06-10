@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { authService } from '../../services/authService';
+import { Logo } from '../../components/logo/Logo';
 
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -26,6 +27,9 @@ export function ForgotPassword() {
   return (
     <div className="w-full max-w-md fade-in">
       <div className="text-center mb-8">
+        <Link to="/" className="inline-block mb-6 hover:opacity-80 transition">
+          <Logo size="md" />
+        </Link>
         <h2 className="text-3xl font-bold text-white mb-2">Esqueceu a senha?</h2>
         <p className="text-gray-400">Informe seu e-mail e enviaremos um link para redefinir.</p>
       </div>

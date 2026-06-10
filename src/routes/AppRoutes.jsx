@@ -8,6 +8,7 @@ import { ResetPassword } from '../pages/login/ResetPassword.jsx';
 import { CompleteProfile } from '../pages/login/CompleteProfile.jsx';
 import { Dashboard } from '../pages/dashboard/Dashboard.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
+import { AdminRoute } from './AdminRoute.jsx';
 import { PagesLayout } from '../pages/page-layout/PageLayout.jsx';
 import { Bolao } from '../pages/bolao/Bolao.jsx';
 import { BolaoConvite } from '../pages/bolao/BolaoConvite.jsx';
@@ -17,6 +18,7 @@ import Palpite from '../pages/palpite/Palpite.jsx';
 import { Admin } from '../pages/admin/Admin.jsx';
 import { Settings } from '../pages/settings/Settings.jsx';
 import { Wallet } from '../pages/wallet/Wallet.jsx';
+import { Tickets } from '../pages/tickets/Tickets.jsx';
 
 export function AppRoutes() {
     return (
@@ -42,9 +44,15 @@ export function AppRoutes() {
                         <Route path="/meus-bolaoes" element={<MeusBolaoes />} />
                         <Route path="/palpite" element={<MeusPalpites />} />
                         <Route path="/palpite/:idBolao/palpite" element={<Palpite />} />
-                        <Route path="/admin" element={<Admin />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/carteira" element={<Wallet />} />
+                        <Route path="/tickets" element={<Tickets />} />
+                    </Route>
+                    {/* Rota /admin protegida por role — redireciona não-admins para /dashboard */}
+                    <Route element={<AdminRoute />}>
+                        <Route element={<PagesLayout />}>
+                            <Route path="/admin" element={<Admin />} />
+                        </Route>
                     </Route>
                 </Route>
             </Routes>

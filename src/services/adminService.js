@@ -69,6 +69,26 @@ export const adminService = {
         const response = await api.get(`/admin/partida/${partidaId}/bolaoes`);
         return response.data;
     },
+    consultarResultado: async (partidaId) => {
+        const response = await api.get(`/admin/partida/${partidaId}/resultado`);
+        return response.data;
+    },
+    getFluxoCaixa: async () => {
+        const response = await api.get("/admin/fluxo-caixa");
+        return response.data;
+    },
+    listarTodosTicketsAdmin: async (pagina = 1) => {
+        const response = await api.get(`/admin/tickets?pagina=${pagina}`);
+        return response.data;
+    },
+    responderTicket: async (ticketId, resposta) => {
+        const response = await api.post(`/admin/tickets/${ticketId}/responder`, { Resposta: resposta });
+        return response.data;
+    },
+    fecharTicketAdmin: async (ticketId) => {
+        const response = await api.post(`/admin/tickets/${ticketId}/fechar`);
+        return response.data;
+    },
     getLogs: async (tipo = null, pagina = 1) => {
         const params = new URLSearchParams({ pagina });
         if (tipo !== null && tipo !== undefined) params.append('tipo', tipo);
