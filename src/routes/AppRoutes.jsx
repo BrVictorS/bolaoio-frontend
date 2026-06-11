@@ -19,12 +19,16 @@ import { Admin } from '../pages/admin/Admin.jsx';
 import { Settings } from '../pages/settings/Settings.jsx';
 import { Wallet } from '../pages/wallet/Wallet.jsx';
 import { Tickets } from '../pages/tickets/Tickets.jsx';
+import { TermosDeUso } from '../pages/legal/TermosDeUso.jsx';
+import { PoliticaDePrivacidade } from '../pages/legal/PoliticaDePrivacidade.jsx';
 
 export function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/termos-de-uso" element={<TermosDeUso />} />
+                <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
                 <Route path="/bolao/:id/convite" element={<BolaoConvite />} />
 
                 <Route element={<AuthLayout />}>

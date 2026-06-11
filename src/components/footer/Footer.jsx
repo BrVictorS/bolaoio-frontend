@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Logo } from '../logo/Logo';
 
 export function Footer() {
@@ -15,9 +16,9 @@ export function Footer() {
         <div>
           <h4 className="text-white font-bold mb-4">Links Rápidos</h4>
           <ul className="text-gray-400 text-sm space-y-2">
-            <li><a href="#" className="hover:text-primary">Termos de Uso</a></li>
-            <li><a href="#" className="hover:text-primary">Privacidade</a></li>
-            <li><a href="#" className="hover:text-primary">Suporte</a></li>
+            <li><Link to="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</Link></li>
+            <li><Link to="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</Link></li>
+            <li><a href="#" className="hover:text-primary transition-colors">Suporte</a></li>
           </ul>
         </div>
         <div>
