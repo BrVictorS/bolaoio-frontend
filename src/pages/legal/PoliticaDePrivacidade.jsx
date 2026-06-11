@@ -124,7 +124,8 @@ export function PoliticaDePrivacidade() {
                             <li><strong className="text-gray-300">Oposição:</strong> opor-se ao tratamento em casos de descumprimento da LGPD.</li>
                         </ul>
                         <p>
-                            Para exercer qualquer um desses direitos, entre em contato pelo suporte da plataforma.
+                            Para exercer qualquer um desses direitos, entre em contato pelo e-mail{' '}
+                            <a href="mailto:bollao.com@gmail.com" className="text-primary hover:underline">bollao.com@gmail.com</a>.
                             Atenderemos sua solicitação em até <strong className="text-white">15 dias úteis</strong>.
                         </p>
                     </Section>

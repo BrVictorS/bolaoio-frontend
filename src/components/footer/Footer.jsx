@@ -18,7 +18,7 @@ export function Footer() {
           <ul className="text-gray-400 text-sm space-y-2">
             <li><Link to="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</Link></li>
             <li><Link to="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</Link></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Suporte</a></li>
+            <li><a href="mailto:bollao.com@gmail.com" className="hover:text-primary transition-colors">Suporte</a></li>
           </ul>
         </div>
         <div>

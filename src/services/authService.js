@@ -55,7 +55,8 @@ export const authService = {
             const response = await api.post('/auth/forgot-password', ForgotPasswordRequestDto(email));
             return mapForgotPasswordResponseDto(response.data);
         } catch (error) {
-            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
+            if (error.code === 'ECONNABORTED') throw { message: 'O servidor demorou para responder. Tente novamente.' };
+            throw error.response?.data || { message: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.' };
         }
     },
 
@@ -64,7 +65,8 @@ export const authService = {
             const response = await api.post('/auth/reset-password-token', ResetPasswordWithTokenRequestDto(token, novaSenha));
             return mapResetPasswordWithTokenResponseDto(response.data);
         } catch (error) {
-            throw error.response?.data || { message: 'Erro ao conectar com o servidor' };
+            if (error.code === 'ECONNABORTED') throw { message: 'O servidor demorou para responder. Tente novamente.' };
+            throw error.response?.data || { message: 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.' };
         }
     },
 

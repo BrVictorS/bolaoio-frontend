@@ -168,7 +168,10 @@ export function TermosDeUso() {
 
                     <div className="mt-8 pt-6 border-t border-gray-700 flex flex-col sm:flex-row gap-3 items-center justify-between">
                         <p className="text-gray-500 text-xs">
-                            Dúvidas? Entre em contato pelo suporte da plataforma.
+                            Dúvidas?{' '}
+                            <a href="mailto:bollao.com@gmail.com" className="text-primary hover:underline">
+                                bollao.com@gmail.com
+                            </a>
                         </p>
                         <Link
                             to="/politica-de-privacidade"

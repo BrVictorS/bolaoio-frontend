@@ -53,6 +53,18 @@ export function Home() {
         </section> */}
       </main>
 
+        {/* Suporte */}
+        <section className="py-10 px-4 border-t border-gray-800">
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="text-gray-500 text-sm">
+              Dúvidas ou suporte?{' '}
+              <a href="mailto:bollao.com@gmail.com" className="text-primary hover:underline font-medium">
+                bollao.com@gmail.com
+              </a>
+            </p>
+          </div>
+        </section>
+
       <Footer />
     </div>
   );

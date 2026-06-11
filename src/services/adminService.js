@@ -33,10 +33,6 @@ export const adminService = {
         const response = await api.post('/admin/atualizarTimes');
         return response.data;
     },
-    getLogs: async () => {
-        const response = await api.get('/admin/log');
-        return response.data;
-    },
     getParticipantesBolao: async (bolaoId) => {
         const response = await api.get(`/bolao/${bolaoId}/participantes`);
         return response.data;
