@@ -15,7 +15,6 @@ export function Bolao() {
         nome: '',
         visibilidade: 1,
         valor: '',
-        dtFechamento: '',
         tipoBolao: 1,
         partidaId: ''
     });
@@ -41,10 +40,21 @@ export function Bolao() {
             ...prev,
             nome: `Bolao ${game.timeA} x ${game.timeB}`,
             partidaId: game.id,
-            dtFechamento: game.data ? game.data.slice(0, 10) : ''
         }));
         setStep(2);
     };
+
+    // Data de fechamento calculada: 30 minutos antes do início da partida
+    const dataFechamentoAuto = selectedGame?.data
+        ? new Date(new Date(selectedGame.data).getTime() - 30 * 60 * 1000)
+        : null;
+
+    const fmtDatetime = (d) => d
+        ? new Intl.DateTimeFormat('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          }).format(d)
+        : '—';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,7 +64,6 @@ export function Bolao() {
             nome: formData.nome,
             visibilidade: Number(formData.visibilidade),
             valor: Number(formData.valor),
-            dtFechamento: formData.dtFechamento,
             tipoBolao: Number(formData.tipoBolao),
             partidaId: formData.partidaId
         };
@@ -191,15 +200,12 @@ export function Bolao() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Data Limite</label>
-                                <input
-                                    name="dtFechamento"
-                                    type="date"
-                                    required
-                                    value={formData.dtFechamento}
-                                    onChange={handleChange}
-                                    className="w-full bg-dark border border-gray-600 rounded-lg p-3 focus:border-primary outline-none"
-                                />
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Fechamento de Palpites</label>
+                                <div className="w-full bg-dark border border-gray-700 rounded-lg p-3 flex items-center gap-2 text-gray-300">
+                                    <i className="fa-solid fa-lock text-primary text-xs"></i>
+                                    <span className="text-sm">{fmtDatetime(dataFechamentoAuto)}</span>
+                                    <span className="ml-auto text-xs text-gray-500 italic">30 min antes do jogo</span>
+                                </div>
                             </div>
                         </div>
 
