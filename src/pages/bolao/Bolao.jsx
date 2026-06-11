@@ -178,31 +178,15 @@ export function Bolao() {
                                     name="valor"
                                     type="number"
                                     required
-                                    min="10"
+                                    min="1"
                                     step="0.01"
                                     value={formData.valor}
                                     onChange={handleChange}
-                                    placeholder="Mínimo R$ 10,00"
+                                    placeholder="Mínimo R$ 1,00"
                                     className="w-full bg-dark border border-gray-600 rounded-lg p-3 focus:border-primary outline-none"
                                 />
-                                {formData.valor > 0 && Number(formData.valor) < 10 && (
-                                    <p className="text-red-400 text-xs mt-1">O valor mínimo por cota é R$ 10,00</p>
-                                )}
-                                {taxas && formData.valor > 0 && (
-                                    <div className="mt-2 bg-dark border border-gray-700 rounded-lg px-3 py-2 text-xs space-y-1">
-                                        <div className="flex justify-between text-gray-500">
-                                            <span>Taxa administrativa ({taxas.taxaAdm}%)</span>
-                                            <span>+{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.valor * taxas.taxaAdm / 100)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-500">
-                                            <span>Taxa Mercado Pago ({taxas.taxaMp}%)</span>
-                                            <span>+{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.valor * taxas.taxaMp / 100)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-white font-semibold border-t border-gray-700 pt-1">
-                                            <span>Participantes pagarão</span>
-                                            <span className="text-primary">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.valor * (1 + taxas.totalPercent / 100))}</span>
-                                        </div>
-                                    </div>
+                                {formData.valor > 0 && Number(formData.valor) < 1 && (
+                                    <p className="text-red-400 text-xs mt-1">O valor mínimo por cota é R$ 1,00</p>
                                 )}
                             </div>
 

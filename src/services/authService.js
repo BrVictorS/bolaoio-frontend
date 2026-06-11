@@ -95,7 +95,14 @@ export const authService = {
 
     isAuthenticated: () => {
         const token = localStorage.getItem("token");
-        return !!token;
+        if (!token) return false;
+        try {
+            const { exp } = jwtDecode(token);
+            if (!exp) return true;
+            return Date.now() < exp * 1000;
+        } catch {
+            return false;
+        }
     },
 
     logout: () => {

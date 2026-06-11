@@ -5,7 +5,9 @@ const STATUS_MAP = {
 };
 
 export function FeaturedGames({ games = [], onVerBoloes, filtroPartidaId }) {
-    const latestGames = games.slice(0, 6);
+    const latestGames = [...games]
+        .sort((a, b) => new Date(a.data) - new Date(b.data))
+        .slice(0, 6);
 
     if (latestGames.length === 0) {
         return <p className="text-gray-500 text-center my-10">Nenhuma partida em destaque no momento.</p>;

@@ -1,10 +1,11 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { authService } from "../services/authService";
 
 export function ProtectedRoute() {
-    const token = localStorage.getItem('token');
     const location = useLocation();
 
-    if (!token) {
+    if (!authService.isAuthenticated()) {
+        authService.logout();
         return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
     }
 

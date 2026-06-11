@@ -320,8 +320,12 @@ export default function Palpite() {
                                     </h3>
                                     <div className="flex items-end justify-center gap-3">
                                         <div className="flex flex-col items-center gap-2">
+                                            {dadosBolao.flagA && (
+                                                <img src={dadosBolao.flagA} alt={dadosBolao.timeA}
+                                                    className="w-10 h-7 object-contain rounded border border-gray-700" />
+                                            )}
                                             <label className="text-gray-400 text-xs uppercase font-bold">
-                                                Gols - {dadosBolao.timeA}
+                                                {dadosBolao.timeA}
                                             </label>
                                             <input
                                                 type="number" min="0" max="99"
@@ -333,8 +337,12 @@ export default function Palpite() {
                                         </div>
                                         <div className="text-3xl font-black text-gray-600 mb-3">X</div>
                                         <div className="flex flex-col items-center gap-2">
+                                            {dadosBolao.flagB && (
+                                                <img src={dadosBolao.flagB} alt={dadosBolao.timeB}
+                                                    className="w-10 h-7 object-contain rounded border border-gray-700" />
+                                            )}
                                             <label className="text-gray-400 text-xs uppercase font-bold">
-                                                Gols - {dadosBolao.timeB}
+                                                {dadosBolao.timeB}
                                             </label>
                                             <input
                                                 type="number" min="0" max="99"
@@ -357,21 +365,29 @@ export default function Palpite() {
                                     </h3>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[
-                                            { key: 'A', label: dadosBolao.timeA, sub: 'Vence' },
-                                            { key: 'E', label: 'Empate', sub: 'Igualdade' },
-                                            { key: 'B', label: dadosBolao.timeB, sub: 'Vence' },
-                                        ].map(({ key, label, sub }) => (
+                                            { key: 'A', label: dadosBolao.timeA, sub: 'Vence', flag: dadosBolao.flagA },
+                                            { key: 'E', label: 'Empate', sub: 'Igualdade', flag: null },
+                                            { key: 'B', label: dadosBolao.timeB, sub: 'Vence', flag: dadosBolao.flagB },
+                                        ].map(({ key, label, sub, flag }) => (
                                             <button key={key} onClick={() => handleSelectVencedor(key)}
                                                 className={`p-3 rounded-2xl border-2 transition-all text-center ${
                                                     palpiteData.vencedor === key
                                                         ? 'border-primary bg-primary/10 shadow-lg shadow-primary/30'
                                                         : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
                                                 }`}>
-                                                <div className="text-2xl mb-2">
-                                                    {palpiteData.vencedor === key && <i className="fa-solid fa-check text-primary"></i>}
+                                                <div className="flex justify-center mb-2 min-h-[2rem] items-center">
+                                                    {flag ? (
+                                                        <img src={flag} alt={label}
+                                                            className="w-10 h-7 object-contain rounded border border-gray-700" />
+                                                    ) : (
+                                                        <span className="text-2xl">🤝</span>
+                                                    )}
                                                 </div>
                                                 <p className="text-white font-bold text-sm">{label}</p>
                                                 <p className="text-gray-400 text-xs">{sub}</p>
+                                                {palpiteData.vencedor === key && (
+                                                    <i className="fa-solid fa-check text-primary text-xs mt-1"></i>
+                                                )}
                                             </button>
                                         ))}
                                     </div>
