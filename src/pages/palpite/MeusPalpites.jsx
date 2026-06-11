@@ -449,7 +449,7 @@ export function MeusPalpites() {
         switch (status?.toLowerCase()) {
             case 'concluido':
                 return { bg: 'bg-green-500/10', border: 'border-green-500/20', text: 'text-green-400', label: 'Palpite registrado', icon: 'fa-check-circle' };
-            case 'processando':
+            case 'pendente':
                 return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', text: 'text-yellow-400 text-xs font-bold', label: 'Pagamento pendente' };
             default:
                 return { display: 'none' };
@@ -656,7 +656,7 @@ export function MeusPalpites() {
                                         )}
 
                                         {/* PIX */}
-                                        {palpite.statusJogo !== 'Finalizada' && palpite.statusPagamento !== 'pago' && (
+                                        {palpite.statusJogo !== 'Finalizada' && palpite.statusPagamento?.toLowerCase() !== 'concluido' && (
                                             <button
                                                 onClick={() => handleExibirPix(palpite.id)}
                                                 disabled={carregandoPix}

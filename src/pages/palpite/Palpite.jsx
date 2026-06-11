@@ -200,12 +200,8 @@ export default function Palpite() {
     const horasRestantes = Math.floor(tempoRestante / (1000 * 60 * 60));
     const minutosRestantes = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
 
-    // Cálculo do valor total com taxas
-    const valorBase = dadosBolao?.valorEntrada ?? dadosBolao?.valor ?? 0;
-    const taxaAdm = taxas ? taxas.taxaAdm / 100 : 0;
-    const taxaMp = taxas ? taxas.taxaMp / 100 : 0;
-    const valorTaxas = valorBase * (taxaAdm + taxaMp);
-    const valorPorCota = dadosBolao?.valorEntrada;
+    // A taxa de serviço é cobrada apenas no depósito; o palpite debita só o valor base.
+    const valorPorCota = dadosBolao?.valor ?? 0;
     const valorTotal = valorPorCota * qtdCotas;
 
     return (

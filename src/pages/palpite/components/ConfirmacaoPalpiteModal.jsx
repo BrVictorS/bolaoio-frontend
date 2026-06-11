@@ -7,7 +7,7 @@ export default function ConfirmacaoPalpiteModal({ bolao, palpite, qtdCotas = 1, 
     const isTipoPlacarExato = bolao?.tipoBolao === 1;
     const isTipoVencedor = bolao?.tipoBolao === 2;
 
-    const valorBase = bolao?.valorEntrada ?? bolao?.valor ?? 0;
+    const valorBase = bolao?.valor ?? 0;
     const totalFinal = valorTotal ?? valorBase * qtdCotas;
 
     const getVencedorText = () => {
