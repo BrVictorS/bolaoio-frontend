@@ -25,9 +25,9 @@ export function Home() {
               <Link to="/register" className="w-full sm:w-auto bg-primary hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition transform hover:-translate-y-1 shadow-xl shadow-green-900/40">
                 Começar agora
               </Link>
-              <Link to="/regras" className="w-full sm:w-auto bg-card hover:bg-gray-700 text-white px-8 py-4 rounded-xl font-bold text-lg border border-gray-700 transition">
+              {/* <Link to="/regras" className="w-full sm:w-auto bg-card hover:bg-gray-700 text-white px-8 py-4 rounded-xl font-bold text-lg border border-gray-700 transition">
                 Ver regras
-              </Link>
+              </Link> */}
             </div>
           </div>
 
